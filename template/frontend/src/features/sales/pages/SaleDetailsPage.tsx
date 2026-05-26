@@ -9,6 +9,7 @@ import type { NormalizedApiError } from '@/shared/api/api-error'
 import { ContentContainer } from '@/shared/components/layout/ContentContainer'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
 import { Button } from '@/shared/components/ui/button'
+import { useConfirmDialog } from '@/shared/hooks/use-confirm-dialog'
 
 export function SaleDetailsPage() {
   const { id = '' } = useParams()
@@ -17,9 +18,10 @@ export function SaleDetailsPage() {
   const cancelMutation = useCancelSale()
   const cancelItemMutation = useCancelSaleItem()
   const deleteMutation = useDeleteSale()
+  const confirmDialog = useConfirmDialog()
 
   function handleCancelSale() {
-    if (!saleQuery.data || !window.confirm(`Cancelar a venda ${saleQuery.data.saleNumber}?`)) {
+    if (!saleQuery.data || !confirmDialog.confirm(`Cancelar a venda ${saleQuery.data.saleNumber}?`)) {
       return
     }
 
@@ -30,7 +32,7 @@ export function SaleDetailsPage() {
   }
 
   function handleCancelItem(item: SaleItem) {
-    if (!saleQuery.data || !window.confirm(`Cancelar o item ${item.productName}?`)) {
+    if (!saleQuery.data || !confirmDialog.confirm(`Cancelar o item ${item.productName}?`)) {
       return
     }
 
@@ -44,7 +46,7 @@ export function SaleDetailsPage() {
   }
 
   function handleDelete() {
-    if (!saleQuery.data || !window.confirm(`Remover definitivamente a venda ${saleQuery.data.saleNumber}?`)) {
+    if (!saleQuery.data || !confirmDialog.confirm(`Remover definitivamente a venda ${saleQuery.data.saleNumber}?`)) {
       return
     }
 

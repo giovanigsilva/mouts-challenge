@@ -11,6 +11,7 @@ import { ContentContainer } from '@/shared/components/layout/ContentContainer'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
 import { Button } from '@/shared/components/ui/button'
 import type { NormalizedApiError } from '@/shared/api/api-error'
+import { useConfirmDialog } from '@/shared/hooks/use-confirm-dialog'
 
 const initialFilters: SalesFiltersType = {
   page: 1,
@@ -23,9 +24,10 @@ export function SalesListPage() {
   const salesQuery = useSalesList(filters)
   const cancelMutation = useCancelSale()
   const deleteMutation = useDeleteSale()
+  const confirmDialog = useConfirmDialog()
 
   function handleCancel(sale: Sale) {
-    if (!window.confirm(`Cancelar a venda ${sale.saleNumber}?`)) {
+    if (!confirmDialog.confirm(`Cancelar a venda ${sale.saleNumber}?`)) {
       return
     }
 
@@ -36,7 +38,7 @@ export function SalesListPage() {
   }
 
   function handleDelete(sale: Sale) {
-    if (!window.confirm(`Remover definitivamente a venda ${sale.saleNumber}?`)) {
+    if (!confirmDialog.confirm(`Remover definitivamente a venda ${sale.saleNumber}?`)) {
       return
     }
 
