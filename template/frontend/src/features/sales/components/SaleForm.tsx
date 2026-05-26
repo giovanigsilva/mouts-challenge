@@ -52,13 +52,13 @@ export function SaleForm({ sale, isSubmitting = false, submitLabel, onSubmit }: 
         <Field label="Data da venda" id="saleDate" error={errors.saleDate?.message}>
           <Input id="saleDate" type="datetime-local" {...register('saleDate')} />
         </Field>
-        <Field label="CustomerExternalId" id="customerExternalId" error={errors.customerExternalId?.message}>
+        <Field label="ID externo do cliente" id="customerExternalId" error={errors.customerExternalId?.message}>
           <Input id="customerExternalId" {...register('customerExternalId')} />
         </Field>
         <Field label="Cliente" id="customerName" error={errors.customerName?.message}>
           <Input id="customerName" {...register('customerName')} />
         </Field>
-        <Field label="BranchExternalId" id="branchExternalId" error={errors.branchExternalId?.message}>
+        <Field label="ID externo da filial" id="branchExternalId" error={errors.branchExternalId?.message}>
           <Input id="branchExternalId" {...register('branchExternalId')} />
         </Field>
         <Field label="Filial" id="branchName" error={errors.branchName?.message}>
@@ -92,11 +92,11 @@ function createDefaultValues(): SaleFormValues {
   return {
     saleNumber: `SALE-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`,
     saleDate: toDateTimeLocalValue(new Date().toISOString()),
-    customerExternalId: '',
-    customerName: '',
-    branchExternalId: '',
-    branchName: '',
-    items: [{ productExternalId: '', productName: '', quantity: 1, unitPrice: 0 }],
+    customerExternalId: '5c9d7b1e-2a63-4e69-9c55-4c0e8142f8c1',
+    customerName: 'Joao da Silva',
+    branchExternalId: '7a2b2c71-6c2e-4f54-8a7e-32159a4d53e2',
+    branchName: 'Loja Centro - Sao Paulo',
+    items: [{ productExternalId: '33a8b4f9-4a6e-49c9-91df-ec7b40b3b1a1', productName: 'Camiseta DeveloperStore', quantity: 1, unitPrice: 0 }],
   }
 }
 

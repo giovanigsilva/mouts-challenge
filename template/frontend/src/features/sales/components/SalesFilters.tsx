@@ -29,11 +29,11 @@ export function SalesFilters({ filters, onChange }: SalesFiltersProps) {
         <Input id="saleNumber" name="saleNumber" value={filters.saleNumber ?? ''} onChange={updateField} />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="customerId">Cliente ID</Label>
+        <Label htmlFor="customerId">ID externo do cliente</Label>
         <Input id="customerId" name="customerId" value={filters.customerId ?? ''} onChange={updateField} />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="branchId">Filial ID</Label>
+        <Label htmlFor="branchId">ID externo da filial</Label>
         <Input id="branchId" name="branchId" value={filters.branchId ?? ''} onChange={updateField} />
       </div>
       <div className="space-y-2">

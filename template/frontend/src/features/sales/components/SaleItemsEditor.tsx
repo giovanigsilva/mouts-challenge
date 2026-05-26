@@ -46,7 +46,7 @@ export function SaleItemsEditor({ control, register, errors, watchedItems }: Sal
             <div key={field.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
                 <div className="space-y-2 xl:col-span-2">
-                  <Label htmlFor={`items.${index}.productExternalId`}>ProductExternalId</Label>
+                  <Label htmlFor={`items.${index}.productExternalId`}>ID externo do produto</Label>
                   <Input id={`items.${index}.productExternalId`} {...register(`items.${index}.productExternalId`)} />
                   {errors.items?.[index]?.productExternalId ? (
                     <p className="text-sm text-rose-300">{errors.items[index]?.productExternalId?.message}</p>

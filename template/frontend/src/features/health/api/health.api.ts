@@ -7,6 +7,7 @@ const endpoints: Record<HealthEndpointKey, { path: string; label: string }> = {
   logging: { path: '/health/logging', label: 'Logging' },
   cache: { path: '/health/cache', label: 'Cache' },
   metrics: { path: '/health/metrics', label: 'Metrics' },
+  enterprise: { path: '/health/enterprise', label: 'Stack enterprise' },
 }
 
 export async function getHealth(key: HealthEndpointKey): Promise<HealthEndpointResult> {
@@ -15,11 +16,13 @@ export async function getHealth(key: HealthEndpointKey): Promise<HealthEndpointR
 
   try {
     const response = await apiClient.get<HealthResponse>(endpoint.path)
+    const responseStatus = response.data.status
 
     return {
       key,
       label: endpoint.label,
-      status: response.data.status === 'Healthy' ? 'Healthy' : 'Unhealthy',
+      path: endpoint.path,
+      status: responseStatus === undefined || responseStatus === 'Healthy' ? 'Healthy' : 'Unhealthy',
       elapsedMs: Math.round(performance.now() - startedAt),
       correlationId: response.headers['x-correlation-id'],
       data: response.data,
@@ -28,6 +31,7 @@ export async function getHealth(key: HealthEndpointKey): Promise<HealthEndpointR
     return {
       key,
       label: endpoint.label,
+      path: endpoint.path,
       status: 'Unavailable',
       elapsedMs: Math.round(performance.now() - startedAt),
     }

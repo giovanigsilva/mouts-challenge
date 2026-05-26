@@ -40,6 +40,8 @@ export function HealthPage() {
                 {result ? (
                   <>
                     <HealthIndicator status={result.status} />
+                    <p className="text-sm text-slate-400">Servico monitorado: {result.path}</p>
+                    {result.data?.serviceName ? <p className="text-sm text-slate-400">Aplicacao: {result.data.serviceName}</p> : null}
                     <p className="text-sm text-slate-400">Tempo: {result.elapsedMs} ms</p>
                     <p className="break-all text-xs text-slate-500">CorrelationId: {result.correlationId ?? '-'}</p>
                     {result.data?.healthChecks?.map((check) => (
@@ -47,6 +49,15 @@ export function HealthPage() {
                         <p className="font-medium text-white">{check.name}</p>
                         <p>{check.status}</p>
                         {check.description ? <p className="text-slate-500">{check.description}</p> : null}
+                      </div>
+                    ))}
+                    {result.data?.services?.map((service) => (
+                      <div key={service.name} className="rounded-xl bg-white/5 p-3 text-sm text-slate-300">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="font-medium text-white">{service.name}</p>
+                          <HealthIndicator status={service.status === 'Healthy' ? 'Healthy' : 'Unhealthy'} />
+                        </div>
+                        {service.target ? <p className="mt-2 break-all text-xs text-slate-500">{service.target}</p> : null}
                       </div>
                     ))}
                   </>

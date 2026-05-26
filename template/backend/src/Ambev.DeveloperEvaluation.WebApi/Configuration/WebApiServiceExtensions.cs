@@ -16,6 +16,7 @@ public static class WebApiServiceExtensions
     {
         builder.AddDefaultLogging();
         builder.Services.AddControllers();
+        builder.Services.AddHttpClient();
         builder.Services.AddEndpointsApiExplorer();
         builder.AddBasicHealthChecks();
         builder.Services.AddHealthChecks()
@@ -43,9 +44,9 @@ public static class WebApiServiceExtensions
             {
                 var origins = configuration.GetSection("Security:AllowedOrigins").Get<string[]>() ?? [];
                 if (origins.Length == 0)
-                    policy.AllowAnyHeader().AllowAnyMethod();
+                    policy.AllowAnyHeader().AllowAnyMethod().WithExposedHeaders(Middleware.CorrelationIdMiddleware.HeaderName);
                 else
-                    policy.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod();
+                    policy.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod().WithExposedHeaders(Middleware.CorrelationIdMiddleware.HeaderName);
             });
         });
 

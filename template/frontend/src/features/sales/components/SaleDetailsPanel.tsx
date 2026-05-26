@@ -29,8 +29,8 @@ export function SaleDetailsPanel({ sale, onCancelItem }: SaleDetailsPanelProps) 
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <InfoCard label="Cliente" value={`${sale.customerName} (${sale.customerExternalId})`} />
-        <InfoCard label="Filial" value={`${sale.branchName} (${sale.branchExternalId})`} />
+        <InfoCard label="Cliente / ID externo" value={`${sale.customerName} (${sale.customerExternalId})`} />
+        <InfoCard label="Filial / ID externo" value={`${sale.branchName} (${sale.branchExternalId})`} />
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
