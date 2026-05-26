@@ -14,6 +14,7 @@ public sealed class DefaultErrorResponsesOperationFilter : IOperationFilter
         AddResponse(operation, "404", "Recurso nao encontrado.");
         AddResponse(operation, "408", "A requisicao excedeu o tempo limite de processamento.");
         AddResponse(operation, "409", "Conflito ao processar a operacao, como concorrencia de dados.");
+        AddResponse(operation, "429", "Muitas requisicoes em um curto periodo. Tente novamente mais tarde.");
         AddResponse(operation, "499", "Requisicao cancelada pelo cliente antes da conclusao do processamento.");
         AddResponse(operation, "500", "Erro interno inesperado. Informe o correlationId ao suporte.");
     }

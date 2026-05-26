@@ -28,6 +28,7 @@ public static class WebApiPipelineExtensions
             app.UseMiddleware<SecurityHeadersMiddleware>();
 
         app.UseCors("DefaultCors");
+        app.UseRateLimiter();
         app.UseAuthentication();
         app.UseAuthorization();
         app.UseBasicHealthChecks();

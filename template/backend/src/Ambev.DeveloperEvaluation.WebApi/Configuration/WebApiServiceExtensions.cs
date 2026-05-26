@@ -9,7 +9,9 @@ using Ambev.DeveloperEvaluation.ORM;
 using Ambev.DeveloperEvaluation.WebApi.HealthChecks;
 using Ambev.DeveloperEvaluation.WebApi.Swagger;
 using MediatR;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.RateLimiting;
 
 namespace Ambev.DeveloperEvaluation.WebApi.Configuration;
 
@@ -25,6 +27,7 @@ public static class WebApiServiceExtensions
             .AddCheck<DatabaseHealthCheck>("PostgreSQL", tags: ["readiness"]);
         builder.Services.AddDeveloperStoreSwagger(builder.Configuration);
         builder.Services.AddDeveloperStoreCors(builder.Configuration);
+        builder.Services.AddDeveloperStoreRateLimiting(builder.Configuration);
         builder.Services.AddDeveloperStoreDatabase(builder.Configuration);
         builder.Services.AddJwtAuthentication(builder.Configuration);
         builder.Services.AddDeveloperStoreAuthorization();
@@ -59,6 +62,58 @@ public static class WebApiServiceExtensions
                 b => b.MigrationsAssembly("Ambev.DeveloperEvaluation.ORM")
             )
         );
+
+        return services;
+    }
+
+    private static IServiceCollection AddDeveloperStoreRateLimiting(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddRateLimiter(options =>
+        {
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            options.OnRejected = async (context, cancellationToken) =>
+            {
+                context.HttpContext.Response.ContentType = "application/json";
+                await context.HttpContext.Response.WriteAsJsonAsync(new
+                {
+                    success = false,
+                    message = "Muitas requisicoes em um curto periodo. Tente novamente mais tarde.",
+                    correlationId = context.HttpContext.Response.Headers[Middleware.CorrelationIdMiddleware.HeaderName].ToString(),
+                    timestamp = DateTimeOffset.UtcNow
+                }, cancellationToken);
+            };
+
+            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+            {
+                var key = httpContext.User.Identity?.IsAuthenticated == true
+                    ? httpContext.User.Identity.Name ?? httpContext.Connection.RemoteIpAddress?.ToString() ?? "authenticated"
+                    : httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+
+                return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = configuration.GetValue<bool>("Security:EnableRateLimiting") ? 120 : int.MaxValue,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0,
+                    AutoReplenishment = true
+                });
+            });
+
+            options.AddFixedWindowLimiter("AuthPolicy", limiterOptions =>
+            {
+                limiterOptions.PermitLimit = configuration.GetValue<bool>("Security:EnableRateLimiting") ? 10 : int.MaxValue;
+                limiterOptions.Window = TimeSpan.FromMinutes(1);
+                limiterOptions.QueueLimit = 0;
+                limiterOptions.AutoReplenishment = true;
+            });
+
+            options.AddFixedWindowLimiter("SalesPolicy", limiterOptions =>
+            {
+                limiterOptions.PermitLimit = configuration.GetValue<bool>("Security:EnableRateLimiting") ? 60 : int.MaxValue;
+                limiterOptions.Window = TimeSpan.FromMinutes(1);
+                limiterOptions.QueueLimit = 0;
+                limiterOptions.AutoReplenishment = true;
+            });
+        });
 
         return services;
     }

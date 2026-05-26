@@ -5,6 +5,7 @@ using Ambev.DeveloperEvaluation.WebApi.Common;
 using Ambev.DeveloperEvaluation.WebApi.Features.Auth.AuthenticateUserFeature;
 using Ambev.DeveloperEvaluation.Application.Auth.AuthenticateUser;
 using Swashbuckle.AspNetCore.Annotations;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Ambev.DeveloperEvaluation.WebApi.Features.Auth;
 
@@ -14,6 +15,7 @@ namespace Ambev.DeveloperEvaluation.WebApi.Features.Auth;
 [ApiController]
 [Route("api/[controller]")]
 [Tags("Autenticacao")]
+[EnableRateLimiting("AuthPolicy")]
 public class AuthController : BaseController
 {
     private readonly IMediator _mediator;

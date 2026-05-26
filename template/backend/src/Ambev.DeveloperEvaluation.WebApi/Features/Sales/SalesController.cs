@@ -12,6 +12,7 @@ using Ambev.DeveloperEvaluation.WebApi.Features.Sales.UpdateSale;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales;
@@ -20,6 +21,7 @@ namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales;
 [Route("api/sales")]
 [Authorize]
 [Tags("Vendas")]
+[EnableRateLimiting("SalesPolicy")]
 public class SalesController : BaseController
 {
     private readonly IMediator _mediator;

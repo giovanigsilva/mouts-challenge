@@ -15,6 +15,8 @@ public sealed class SecurityHeadersMiddleware
         context.Response.Headers.TryAdd("X-Frame-Options", "DENY");
         context.Response.Headers.TryAdd("Referrer-Policy", "no-referrer");
         context.Response.Headers.TryAdd("X-XSS-Protection", "0");
+        context.Response.Headers.TryAdd("Cache-Control", "no-store, no-cache, must-revalidate");
+        context.Response.Headers.TryAdd("Pragma", "no-cache");
 
         await _next(context);
     }
