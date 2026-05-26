@@ -165,6 +165,21 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  k6:
+    container_name: developerstore_k6
+    image: grafana/k6:0.54.0
+    profiles:
+      - loadtest
+    environment:
+      BASE_URL: ${K6_BASE_URL:-http://ambev.developerevaluation.webapi:8080}
+      TOKEN: ${K6_TOKEN:-}
+      SALE_ID: ${K6_SALE_ID:-}
+    volumes:
+      - ./tests/load:/scripts:ro
+    depends_on:
+      - ambev.developerevaluation.webapi
+    entrypoint: ["k6"]
+
   datadog-agent:
     container_name: developerstore_datadog_agent
     image: gcr.io/datadoghq/agent:7
