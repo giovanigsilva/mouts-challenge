@@ -5,6 +5,7 @@ export type CreateUserRequest = {
   password: string
   status: number
   role: number
+  recaptchaToken?: string | null
 }
 
 export type UserResponse = {

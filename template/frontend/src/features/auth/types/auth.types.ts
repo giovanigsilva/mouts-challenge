@@ -1,6 +1,7 @@
 export type LoginRequest = {
   email: string
   password: string
+  recaptchaToken?: string | null
 }
 
 export type LoginResponse = {

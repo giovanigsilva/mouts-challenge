@@ -13,8 +13,11 @@ import { PageHeader } from '@/shared/components/layout/PageHeader'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
+import { recaptchaConfig } from '@/shared/security/recaptcha/recaptcha.config'
+import { useRecaptcha } from '@/shared/security/recaptcha/use-recaptcha'
 
 export function CreateUserPage() {
+  const { executeRecaptcha } = useRecaptcha()
   const {
     register,
     handleSubmit,
@@ -37,10 +40,15 @@ export function CreateUserPage() {
     onError: (error) => toast.error((error as unknown as NormalizedApiError).message),
   })
 
+  async function submit(values: CreateUserFormValues) {
+    const recaptchaToken = await executeRecaptcha(recaptchaConfig.createUserAction)
+    mutation.mutate({ ...values, recaptchaToken })
+  }
+
   return (
     <ContentContainer>
       <PageHeader title="Criar usuario" description="Cria usuario para autenticar na API DeveloperStore." />
-      <form className="grid gap-4 rounded-2xl border border-white/10 bg-white/5 p-5 md:grid-cols-2" onSubmit={handleSubmit((values) => mutation.mutate(values))}>
+      <form className="grid gap-4 rounded-2xl border border-white/10 bg-white/5 p-5 md:grid-cols-2" onSubmit={handleSubmit(submit)}>
         <Field label="Nome" id="username" error={errors.username?.message}>
           <Input id="username" {...register('username')} />
         </Field>
@@ -68,9 +76,10 @@ export function CreateUserPage() {
           </select>
         </Field>
         <div className="md:col-span-2">
+          {recaptchaConfig.enabled ? <p className="mb-3 text-xs text-cyan-200">Protecao anti-bot simulada ativa neste formulario.</p> : null}
           <Button type="submit" disabled={mutation.isPending}>
             {mutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Criar usuario
+            {mutation.isPending ? 'Criando...' : 'Criar usuario'}
           </Button>
         </div>
       </form>
