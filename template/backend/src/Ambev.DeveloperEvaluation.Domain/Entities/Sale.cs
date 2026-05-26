@@ -16,8 +16,6 @@ public class Sale : BaseEntity
     public string BranchName { get; private set; } = string.Empty;
     public decimal TotalAmount { get; private set; }
     public bool IsCancelled { get; private set; }
-    public DateTime CreatedAt { get; private set; }
-    public DateTime? UpdatedAt { get; private set; }
     public IReadOnlyCollection<SaleItem> Items => _items.AsReadOnly();
     public IReadOnlyCollection<object> DomainEvents => _domainEvents.AsReadOnly();
 

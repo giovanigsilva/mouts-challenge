@@ -14,9 +14,6 @@ public class SaleItem : BaseEntity
     public decimal DiscountAmount { get; private set; }
     public decimal TotalAmount { get; private set; }
     public bool IsCancelled { get; private set; }
-    public DateTime CreatedAt { get; private set; }
-    public DateTime? UpdatedAt { get; private set; }
-
     private SaleItem()
     {
     }

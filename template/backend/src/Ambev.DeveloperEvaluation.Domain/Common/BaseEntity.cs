@@ -3,6 +3,8 @@ namespace Ambev.DeveloperEvaluation.Domain.Common;
 public class BaseEntity : IComparable<BaseEntity>
 {
     public Guid Id { get; set; }
+    public DateTime CreatedAt { get; protected set; }
+    public DateTime? UpdatedAt { get; protected set; }
 
     public int CompareTo(BaseEntity? other)
     {
