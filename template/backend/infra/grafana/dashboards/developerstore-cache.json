@@ -1,0 +1,42 @@
+{
+  "uid": "developerstore-cache",
+  "title": "DeveloperStore Cache",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Cache hits",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+      "targets": [
+        { "expr": "sum(developerstore_cache_hit_total)", "legendFormat": "hits" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Cache misses",
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+      "targets": [
+        { "expr": "sum(developerstore_cache_miss_total)", "legendFormat": "misses" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Hit ratio",
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+      "targets": [
+        { "expr": "sum(developerstore_cache_hit_total) / clamp_min(sum(developerstore_cache_hit_total) + sum(developerstore_cache_miss_total), 1)", "legendFormat": "ratio" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Erros de cache",
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+      "targets": [
+        { "expr": "sum(developerstore_cache_error_total)", "legendFormat": "erros" }
+      ]
+    }
+  ]
+}
