@@ -17,7 +17,7 @@ public class UpdateSaleValidator : AbstractValidator<UpdateSaleCommand>
         RuleFor(sale => sale.Items).NotEmpty().WithMessage("A venda deve possuir ao menos um item.");
         RuleForEach(sale => sale.Items).SetValidator(new SaleItemInputValidator());
         RuleFor(sale => sale.Items)
-            .Must(items => items.Select(item => item.ProductExternalId).Distinct().Count() == items.Count())
+            .Must(items => items is not null && items.Select(item => item.ProductExternalId).Distinct().Count() == items.Count())
             .WithMessage("Nao e permitido repetir o mesmo produto na venda.");
     }
 }

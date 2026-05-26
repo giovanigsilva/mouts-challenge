@@ -137,6 +137,7 @@ public static class WebApiServiceExtensions
     private static IServiceCollection AddDeveloperStoreApplication(this IServiceCollection services)
     {
         services.AddAutoMapper(_ => { }, typeof(Program).Assembly, typeof(ApplicationLayer).Assembly);
+        services.AddValidatorsFromAssemblies(typeof(ApplicationLayer).Assembly, typeof(Program).Assembly);
         services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssemblies(

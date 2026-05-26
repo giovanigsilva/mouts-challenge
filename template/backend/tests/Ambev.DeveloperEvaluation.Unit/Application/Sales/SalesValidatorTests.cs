@@ -21,6 +21,18 @@ public class SalesValidatorTests
         result.ShouldHaveValidationErrorFor(command => command.Items);
     }
 
+    [Fact(DisplayName = "CreateSaleValidator should reject null items without throwing")]
+    public void Given_NullItems_When_ValidatingCreateSale_Then_ShouldHaveError()
+    {
+        var validator = new CreateSaleValidator();
+        var command = CreateValidCommand();
+        command.Items = null!;
+
+        var result = validator.TestValidate(command);
+
+        result.ShouldHaveValidationErrorFor(command => command.Items);
+    }
+
     [Fact(DisplayName = "CreateSaleValidator should reject invalid quantity")]
     public void Given_InvalidQuantity_When_ValidatingCreateSale_Then_ShouldHaveError()
     {
