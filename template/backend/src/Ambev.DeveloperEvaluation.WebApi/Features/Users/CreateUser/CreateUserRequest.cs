@@ -40,4 +40,10 @@ public class CreateUserRequest
     /// Perfil atribuido ao usuario.
     /// </summary>
     public UserRole Role { get; set; }
+
+    /// <summary>
+    /// Token de protecao anti-robo. No modo simulado, usa o formato simulated:create_user:{timestamp}:{nonce}.
+    /// </summary>
+    /// <example>simulated:create_user:1779800000:0f5c4c8e</example>
+    public string? RecaptchaToken { get; set; }
 }

@@ -8,6 +8,8 @@ using Ambev.DeveloperEvaluation.WebApi.Features.Users.DeleteUser;
 using Ambev.DeveloperEvaluation.Application.Users.CreateUser;
 using Ambev.DeveloperEvaluation.Application.Users.GetUser;
 using Ambev.DeveloperEvaluation.Application.Users.DeleteUser;
+using Ambev.DeveloperEvaluation.Common.Security.Recaptcha;
+using Microsoft.Extensions.Options;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace Ambev.DeveloperEvaluation.WebApi.Features.Users;
@@ -22,16 +24,22 @@ public class UsersController : BaseController
 {
     private readonly IMediator _mediator;
     private readonly IMapper _mapper;
+    private readonly IRecaptchaVerifier _recaptchaVerifier;
+    private readonly RecaptchaOptions _recaptchaOptions;
+    private readonly ILogger<UsersController> _logger;
 
     /// <summary>
     /// Inicializa uma nova instancia do controlador de usuarios.
     /// </summary>
     /// <param name="mediator">Instancia do MediatR usada para executar os casos de uso.</param>
     /// <param name="mapper">Instancia do AutoMapper usada para converter requests e responses.</param>
-    public UsersController(IMediator mediator, IMapper mapper)
+    public UsersController(IMediator mediator, IMapper mapper, IRecaptchaVerifier recaptchaVerifier, IOptions<RecaptchaOptions> recaptchaOptions, ILogger<UsersController> logger)
     {
         _mediator = mediator;
         _mapper = mapper;
+        _recaptchaVerifier = recaptchaVerifier;
+        _recaptchaOptions = recaptchaOptions.Value;
+        _logger = logger;
     }
 
     /// <summary>
@@ -51,6 +59,13 @@ public class UsersController : BaseController
 
         if (!validationResult.IsValid)
             return BadRequest(validationResult.Errors);
+
+        var recaptcha = await _recaptchaVerifier.VerifyAsync(request.RecaptchaToken ?? string.Empty, _recaptchaOptions.Actions.CreateUser, HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken);
+        if (!recaptcha.Success)
+        {
+            _logger.LogWarning("RecaptchaCreateUserRejected Provider={Provider} Action={Action} Score={Score} FailureReason={FailureReason}", recaptcha.Provider, recaptcha.Action, recaptcha.Score, recaptcha.FailureReason);
+            return BadRequest("Nao foi possivel validar a protecao anti-robo. Tente novamente.");
+        }
 
         var command = _mapper.Map<CreateUserCommand>(request);
         var response = await _mediator.Send(command, cancellationToken);
