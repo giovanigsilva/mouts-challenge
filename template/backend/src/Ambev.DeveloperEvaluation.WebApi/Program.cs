@@ -12,6 +12,7 @@ public class Program
             Log.Information("Starting web application");
 
             WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+            builder.AddDeveloperStoreSecrets();
             StartupConfigurationValidator.Validate(builder);
             builder.AddWebApiServices();
 
