@@ -41,6 +41,11 @@ public class JwtTokenGenerator : IJwtTokenGenerator
         var tokenHandler = new JwtSecurityTokenHandler();
         var secretKey = _configuration["Jwt:SecretKey"];
         ArgumentException.ThrowIfNullOrWhiteSpace(secretKey);
+        var issuer = _configuration["Jwt:Issuer"];
+        ArgumentException.ThrowIfNullOrWhiteSpace(issuer);
+        var audience = _configuration["Jwt:Audience"];
+        ArgumentException.ThrowIfNullOrWhiteSpace(audience);
+        var expirationMinutes = _configuration.GetValue<int?>("Jwt:ExpirationMinutes") ?? 480;
         var key = Encoding.ASCII.GetBytes(secretKey);
 
         var claims = new[]
@@ -53,7 +58,9 @@ public class JwtTokenGenerator : IJwtTokenGenerator
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddHours(8),
+            Issuer = issuer,
+            Audience = audience,
+            Expires = DateTime.UtcNow.AddMinutes(expirationMinutes),
             SigningCredentials = new SigningCredentials(
                 new SymmetricSecurityKey(key),
                 SecurityAlgorithms.HmacSha256Signature)

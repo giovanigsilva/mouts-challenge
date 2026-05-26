@@ -6,6 +6,7 @@ using Ambev.DeveloperEvaluation.Common.Validation;
 using Ambev.DeveloperEvaluation.IoC;
 using Ambev.DeveloperEvaluation.ORM;
 using Ambev.DeveloperEvaluation.WebApi.Configuration;
+using Ambev.DeveloperEvaluation.WebApi.HealthChecks;
 using Ambev.DeveloperEvaluation.WebApi.Middleware;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -30,6 +31,9 @@ public class Program
             builder.Services.AddEndpointsApiExplorer();
 
             builder.AddBasicHealthChecks();
+            builder.Services.AddHealthChecks()
+                .AddCheck<DatabaseHealthCheck>("PostgreSQL", tags: ["readiness"]);
+
             builder.Services.AddSwaggerGen(options =>
             {
                 options.SwaggerDoc("v1", new OpenApiInfo
@@ -82,6 +86,13 @@ public class Program
             );
 
             builder.Services.AddJwtAuthentication(builder.Configuration);
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("Sales.Read", policy => policy.RequireAuthenticatedUser());
+                options.AddPolicy("Sales.Write", policy => policy.RequireAuthenticatedUser());
+                options.AddPolicy("Sales.Cancel", policy => policy.RequireAuthenticatedUser());
+                options.AddPolicy("Sales.Delete", policy => policy.RequireAuthenticatedUser());
+            });
 
             builder.RegisterDependencies();
 
@@ -98,7 +109,8 @@ public class Program
             builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
             var app = builder.Build();
-            app.UseMiddleware<ValidationExceptionMiddleware>();
+            app.UseMiddleware<CorrelationIdMiddleware>();
+            app.UseMiddleware<GlobalExceptionMiddleware>();
 
             if (builder.Configuration.GetValue<bool>("Swagger:Enabled"))
             {
@@ -111,6 +123,9 @@ public class Program
 
             if (builder.Configuration.GetValue<bool>("Security:EnableHttpsRedirection"))
                 app.UseHttpsRedirection();
+
+            if (builder.Configuration.GetValue<bool>("Security:EnableSecurityHeaders"))
+                app.UseMiddleware<SecurityHeadersMiddleware>();
 
             app.UseCors("DefaultCors");
 
@@ -126,6 +141,7 @@ public class Program
         catch (Exception ex)
         {
             Log.Fatal(ex, "Application terminated unexpectedly");
+            throw;
         }
         finally
         {
