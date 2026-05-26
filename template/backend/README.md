@@ -10,6 +10,7 @@ Este README foi escrito para o avaliador clonar o repositorio e inicializar a AP
 - [Pre-requisitos](#pre-requisitos)
 - [Inicializacao rapida com Docker](#inicializacao-rapida-com-docker)
 - [Migrations](#migrations)
+- [Modelagem do banco de dados](#modelagem-do-banco-de-dados)
 - [Swagger](#swagger)
 - [Fluxo de teste por curl](#fluxo-de-teste-por-curl)
 - [Rodar sem container para a API](#rodar-sem-container-para-a-api)
@@ -36,7 +37,7 @@ Este README foi escrito para o avaliador clonar o repositorio e inicializar a AP
 - Eventos de venda registrados em log: `SaleCreated`, `SaleModified`, `SaleCancelled`, `ItemCancelled`.
 - PostgreSQL com EF Core migrations no projeto `Ambev.DeveloperEvaluation.ORM`.
 - Migrations automaticas no startup da API.
-- Health checks: `/health/live`, `/health/ready`, `/health/logging`, `/health/cache`, `/health/metrics`.
+- Health checks: `/health/live`, `/health/ready`, `/health/logging`, `/health/cache`, `/health/metrics`, `/health/enterprise`.
 - Endpoint Prometheus: `/metrics`.
 - Swagger em portugues.
 - FluentValidation em requests, commands e queries.
@@ -204,6 +205,140 @@ Connection string usada dentro do Docker:
 Host=ambev.developerevaluation.database;Port=5432;Database=developer_evaluation;Username=developerstore_app;Password=DevOnly_Pg_9fR!42sL#2026_Strong
 ```
 
+## Modelagem do banco de dados
+
+A modelagem atual usa PostgreSQL com Entity Framework Core. O `DefaultContext` possui tres agregados persistidos:
+
+```text
+src/Ambev.DeveloperEvaluation.ORM/DefaultContext.cs
+
+DbSet<User> Users
+DbSet<Sale> Sales
+DbSet<SaleItem> SaleItems
+```
+
+Todas as entidades persistidas herdam de `BaseEntity` e possuem os campos comuns:
+
+```text
+Id uuid PK default gen_random_uuid()
+CreatedAt timestamp with time zone not null
+UpdatedAt timestamp with time zone null
+```
+
+### Users
+
+Tabela de usuarios usada por Auth e Users.
+
+```text
+Users
+-----
+Id uuid PK default gen_random_uuid()
+Username varchar(50) not null
+Password varchar(100) not null
+Phone varchar(20) not null
+Email varchar(100) not null
+Status varchar(20) not null
+Role varchar(20) not null
+CreatedAt timestamp with time zone not null
+UpdatedAt timestamp with time zone null
+```
+
+### Sales
+
+Tabela principal do agregado de vendas.
+
+```text
+Sales
+-----
+Id uuid PK default gen_random_uuid()
+SaleNumber varchar(60) not null unique
+SaleDate timestamp with time zone not null
+CustomerExternalId uuid not null
+CustomerName varchar(120) not null
+BranchExternalId uuid not null
+BranchName varchar(120) not null
+TotalAmount numeric(18,2) not null
+IsCancelled boolean not null
+CreatedAt timestamp with time zone not null
+UpdatedAt timestamp with time zone null
+```
+
+Indices:
+
+```text
+IX_Sales_SaleNumber unique
+IX_Sales_CustomerExternalId
+IX_Sales_BranchExternalId
+IX_Sales_SaleDate
+IX_Sales_IsCancelled
+```
+
+### SaleItems
+
+Tabela de itens da venda.
+
+```text
+SaleItems
+---------
+Id uuid PK default gen_random_uuid()
+SaleId uuid FK -> Sales.Id not null
+ProductExternalId uuid not null
+ProductName varchar(120) not null
+Quantity integer not null
+UnitPrice numeric(18,2) not null
+DiscountPercentage numeric(5,2) not null
+DiscountAmount numeric(18,2) not null
+TotalAmount numeric(18,2) not null
+IsCancelled boolean not null
+CreatedAt timestamp with time zone not null
+UpdatedAt timestamp with time zone null
+```
+
+Indices:
+
+```text
+IX_SaleItems_SaleId
+IX_SaleItems_ProductExternalId
+```
+
+Relacionamento:
+
+```text
+Sales 1:N SaleItems
+SaleItems.SaleId -> Sales.Id
+DeleteBehavior: Cascade
+```
+
+Observacoes importantes:
+
+- `Users` nao possui relacionamento direto com `Sales`.
+- Nao existem tabelas `Customers`, `Branches` ou `Products`.
+- Sales usa snapshot denormalizado por external identity: `CustomerExternalId`, `CustomerName`, `BranchExternalId`, `BranchName`, `ProductExternalId` e `ProductName`.
+- Eventos de dominio existem no dominio, mas nao sao persistidos em tabela.
+
+Prompt pronto para gerar um DER:
+
+```text
+Desenhe um DER/ERD para um banco PostgreSQL com as tabelas Users, Sales e SaleItems.
+
+Users possui:
+Id uuid PK, Username varchar(50), Password varchar(100), Phone varchar(20), Email varchar(100), Status varchar(20), Role varchar(20), CreatedAt timestamptz, UpdatedAt timestamptz nullable.
+
+Sales possui:
+Id uuid PK, SaleNumber varchar(60) unique, SaleDate timestamptz, CustomerExternalId uuid, CustomerName varchar(120), BranchExternalId uuid, BranchName varchar(120), TotalAmount numeric(18,2), IsCancelled boolean, CreatedAt timestamptz, UpdatedAt timestamptz nullable.
+
+SaleItems possui:
+Id uuid PK, SaleId uuid FK para Sales.Id, ProductExternalId uuid, ProductName varchar(120), Quantity integer, UnitPrice numeric(18,2), DiscountPercentage numeric(5,2), DiscountAmount numeric(18,2), TotalAmount numeric(18,2), IsCancelled boolean, CreatedAt timestamptz, UpdatedAt timestamptz nullable.
+
+Relacionamento:
+Sales 1:N SaleItems, com cascade delete.
+
+Observacoes:
+Users nao se relaciona com Sales.
+Nao existem tabelas Customer, Branch ou Product.
+Sales guarda snapshots denormalizados de cliente, filial e produto atraves de ExternalId e Name.
+```
+
 ## Health checks
 
 Com a API no Docker:
@@ -214,6 +349,7 @@ curl.exe -i http://localhost:8080/health/ready
 curl.exe -i http://localhost:8080/health/logging
 curl.exe -i http://localhost:8080/health/cache
 curl.exe -i http://localhost:8080/health/metrics
+curl.exe -i http://localhost:8080/health/enterprise
 ```
 
 Resultado esperado:
@@ -223,6 +359,7 @@ Resultado esperado:
 - `/health/logging`: `200 OK`, configuracao de logs sem expor segredo.
 - `/health/cache`: `200 OK`, status seguro do cache. Com `Cache:Enabled=false`, informa cache desabilitado.
 - `/health/metrics`: `200 OK`, status seguro das metricas.
+- `/health/enterprise`: `200 OK`, status seguro da stack local: Seq, Redis, Prometheus, Grafana e Datadog.
 
 Metricas Prometheus:
 

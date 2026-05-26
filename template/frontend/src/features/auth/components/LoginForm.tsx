@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
-import { Loader2 } from 'lucide-react'
+import { Loader2, ShieldCheck } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 
@@ -71,7 +71,27 @@ export function LoginForm() {
         </div>
       ) : null}
 
-      {recaptchaConfig.enabled ? <p className="text-xs text-cyan-200">Protecao anti-bot simulada ativa.</p> : null}
+      <div className="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-4 text-sm text-cyan-50 shadow-lg shadow-cyan-950/20">
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 rounded-xl border border-cyan-200/20 bg-cyan-200/15 p-2 text-cyan-100">
+            <ShieldCheck className="h-5 w-5" aria-hidden="true" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="font-semibold text-white">reCAPTCHA v3 simulado</p>
+              <span className="rounded-full border border-white/10 bg-white/10 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-cyan-100">
+                {recaptchaConfig.enabled ? 'Ativo' : 'Desativado'}
+              </span>
+            </div>
+            <p className="mt-1 text-xs leading-5 text-slate-300">
+              Protecao anti-bot local para login. Quando ativa, gera token por action sem usar Google real.
+            </p>
+            <p className="mt-2 text-[11px] uppercase tracking-wide text-cyan-200">
+              Provider: {recaptchaConfig.provider} | Action: {recaptchaConfig.loginAction}
+            </p>
+          </div>
+        </div>
+      </div>
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <Button type="submit" className="flex-1" disabled={mutation.isPending}>

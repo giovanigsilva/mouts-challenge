@@ -22,10 +22,10 @@ export function DashboardPage() {
         description="Indicadores calculados sobre a pagina de vendas carregada. O backend nao expoe endpoint agregado nesta versao."
       />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard title="Vendas carregadas" value={String(sales.length)} icon={ShoppingCart} />
-        <MetricCard title="Vendas ativas" value={String(activeSales.length)} icon={Store} />
-        <MetricCard title="Canceladas" value={String(cancelledSales.length)} icon={Ban} />
-        <MetricCard title="Total carregado" value={formatMoney(totalAmount)} icon={CircleDollarSign} />
+        <MetricCard title="Vendas realizadas" value={String(sales.length)} icon={ShoppingCart} />
+        <MetricCard title="Vendas confirmadas" value={String(activeSales.length)} icon={Store} />
+        <MetricCard title="Vendas canceladas" value={String(cancelledSales.length)} icon={Ban} />
+        <MetricCard title="Total vendido" value={formatMoney(totalAmount)} icon={CircleDollarSign} />
       </div>
       <div className="mt-6 grid gap-4 xl:grid-cols-[1fr_2fr]">
         <HealthStatusCard />
