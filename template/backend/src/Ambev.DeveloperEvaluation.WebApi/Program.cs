@@ -146,6 +146,19 @@ public class Program
 
             app.UseBasicHealthChecks();
 
+            app.MapGet("/health/logging", (IConfiguration configuration, IWebHostEnvironment environment) => Results.Ok(new
+            {
+                datadogEnabled = configuration.GetValue<bool>("Datadog:Enabled") && configuration.GetValue<bool>("Observability:EnableDatadog"),
+                seqEnabled = configuration.GetValue<bool>("Seq:Enabled") && configuration.GetValue<bool>("Observability:EnableSeqFallback"),
+                seqUrlConfigured = !string.IsNullOrWhiteSpace(configuration["Seq:Url"]),
+                consoleLoggingEnabled = true,
+                environment = environment.EnvironmentName,
+                serviceName = configuration["Observability:ServiceName"] ?? "developerstore-sales-api"
+            }))
+            .WithTags("Saude")
+            .WithName("Health_Logging")
+            .AllowAnonymous();
+
             app.MapControllers();
 
             app.Run();
@@ -177,7 +190,9 @@ public class Program
 
         Cancelamento: venda cancelada nao pode ser alterada. Item cancelado nao compoe o total financeiro da venda.
 
-        Eventos: SaleCreated, SaleModified, SaleCancelled e ItemCancelled sao registrados no log da aplicacao. Nesta prova nao ha broker ou mensageria real.
+        Eventos: SaleCreated, SaleModified, SaleCancelled e ItemCancelled sao registrados no log estruturado da aplicacao. Nesta prova nao ha broker ou mensageria real.
+
+        Observabilidade: a aplicacao escreve logs JSON no console para coleta pelo Datadog Agent no Docker. Seq e o unico fallback local pesquisavel. Falhas de observabilidade nao devem derrubar requests de negocio.
 
         Autenticacao: endpoints de Sales exigem JWT Bearer. Use o endpoint de autenticacao, copie o token e clique em Authorize informando Bearer seguido do token.
 
@@ -187,7 +202,7 @@ public class Program
 
         Health checks: /health/live indica processo vivo e /health/ready valida prontidao e PostgreSQL.
 
-        X-Correlation-Id: header opcional para rastrear requisicoes. Se nao informado, a API gera um automaticamente.
+        X-Correlation-Id: header opcional para rastrear requisicoes. Se nao informado, a API gera um automaticamente. Logs incluem correlationId, traceId, usuario quando autenticado, metodo HTTP, path, status code e duracao.
 
         Como testar rapidamente: crie um usuario em /api/Users, autentique em /api/Auth, copie o token JWT, clique em Authorize, informe Bearer seguido do token, execute POST /api/sales, consulte GET /api/sales e teste os PATCH de cancelamento.
         """;

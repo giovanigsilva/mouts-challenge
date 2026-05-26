@@ -406,6 +406,12 @@ curl.exe -i http://localhost:8080/health/ready
 
 As respostas de health nao expõem detalhes internos de excecao. Quando uma dependencia falha, a API retorna uma mensagem operacional segura.
 
+`/health/logging` retorna apenas configuracoes seguras de observabilidade:
+
+```powershell
+curl.exe -i http://localhost:8080/health/logging
+```
+
 ## Documentacao Swagger/OpenAPI
 
 Docker:
@@ -644,6 +650,75 @@ O `CancellationToken` e propagado de controllers para MediatR, validators, handl
 
 Logs nao devem registrar senha, JWT, header Authorization, connection string ou segredo.
 
+## Observabilidade, Rastreabilidade e Fallback de Logs
+
+Implementado nesta branch:
+
+- Serilog como logger principal.
+- Console JSON sempre ativo.
+- Datadog Agent no Docker coletando stdout/stderr dos containers.
+- Seq no Docker como unico fallback local pesquisavel.
+- Sem File Sink.
+- Sem Loki, Elasticsearch, OpenSearch ou Application Insights.
+- Logs HTTP positivos e negativos com correlationId, traceId, usuario, path, metodo, status code, duracao, IP e user-agent.
+- Logs de auditoria tecnica para Auth, Users e Sales.
+- Sanitizacao com `SensitiveDataMasker`.
+
+Subir tudo:
+
+```powershell
+cd template/backend
+docker compose up --build
+```
+
+Configurar Datadog:
+
+```powershell
+copy .env.example .env
+```
+
+Edite `.env` e informe:
+
+```text
+DD_API_KEY=sua_chave_datadog
+DD_SITE=datadoghq.com
+```
+
+Sem `DD_API_KEY`, o Agent pode nao enviar logs ao Datadog, mas a API e o Seq continuam funcionando.
+
+Acessar Seq:
+
+```text
+http://localhost:5341
+```
+
+Pesquisar por correlationId no Seq:
+
+```text
+CorrelationId = '11111111-1111-1111-1111-111111111111'
+```
+
+Pesquisar por usuario:
+
+```text
+UserId = 'user-id'
+```
+
+Pesquisar por venda:
+
+```text
+SaleId = 'sale-id'
+SaleNumber = 'SALE-2026-000001'
+```
+
+Enviar correlationId manualmente:
+
+```powershell
+curl.exe -i -H "X-Correlation-Id: 11111111-1111-1111-1111-111111111111" http://localhost:8080/health/live
+```
+
+Se Datadog estiver indisponivel, a API continua escrevendo logs no console. Se Seq estiver indisponivel, a API continua funcionando porque o sink e assíncrono. Seq e o unico fallback local desta entrega.
+
 ## Commits da Implementacao
 
 Principais commits da entrega:
@@ -686,6 +761,9 @@ Pasta backend:
 ```text
 template/backend/docs/architecture.md
 template/backend/docs/environments.md
+template/backend/docs/logging.md
+template/backend/docs/observability.md
+template/backend/docs/resilience.md
 template/backend/docs/security.md
 template/backend/docs/swagger.md
 ```
