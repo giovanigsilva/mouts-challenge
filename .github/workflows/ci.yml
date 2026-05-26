@@ -1,0 +1,34 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - simulation
+      - uat
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: template/backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - run: dotnet restore Ambev.DeveloperEvaluation.sln
+      - run: dotnet build Ambev.DeveloperEvaluation.sln --configuration Release --no-restore
+      - run: dotnet test Ambev.DeveloperEvaluation.sln --configuration Release --no-build
+      - run: dotnet list Ambev.DeveloperEvaluation.sln package --vulnerable --include-transitive
+        continue-on-error: true
+      - run: dotnet publish src/Ambev.DeveloperEvaluation.WebApi/Ambev.DeveloperEvaluation.WebApi.csproj --configuration Release --no-build --output artifacts/webapi
+      - run: dotnet publish src/Ambev.DeveloperEvaluation.Worker/Ambev.DeveloperEvaluation.Worker.csproj --configuration Release --no-build --output artifacts/worker
+      - run: dotnet publish src/Ambev.DeveloperEvaluation.Functions/Ambev.DeveloperEvaluation.Functions.csproj --configuration Release --no-build --output artifacts/functions
+      - uses: actions/upload-artifact@v4
+        with:
+          name: developerstore-artifacts
+          path: template/backend/artifacts

@@ -14,6 +14,8 @@ namespace Ambev.DeveloperEvaluation.Common.Security
             services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 
             var secretKey = configuration["Jwt:SecretKey"]?.ToString();
+            var issuer = configuration["Jwt:Issuer"]?.ToString();
+            var audience = configuration["Jwt:Audience"]?.ToString();
             ArgumentException.ThrowIfNullOrWhiteSpace(secretKey);
 
             var key = Encoding.ASCII.GetBytes(secretKey);
@@ -31,8 +33,11 @@ namespace Ambev.DeveloperEvaluation.Common.Security
                 {
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
+                    ValidateIssuer = !string.IsNullOrWhiteSpace(issuer),
+                    ValidateAudience = !string.IsNullOrWhiteSpace(audience),
+                    ValidIssuer = issuer,
+                    ValidAudience = audience,
+                    ValidateLifetime = true,
                     ClockSkew = TimeSpan.Zero
                 };
             });

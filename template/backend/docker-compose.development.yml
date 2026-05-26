@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  webapi:
+    build:
+      context: .
+      dockerfile: src/Ambev.DeveloperEvaluation.WebApi/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: 8080
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=developer_evaluation;Username=developer;Password=ev@luAt10n
+      ConnectionStrings__Redis: redis:6379,password=ev@luAt10n
+      Cache__Enabled: "true"
+      ServiceBus__Enabled: "false"
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - redis
+
+  worker:
+    build:
+      context: .
+      dockerfile: src/Ambev.DeveloperEvaluation.Worker/Dockerfile
+    environment:
+      DOTNET_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=developer_evaluation;Username=developer;Password=ev@luAt10n
+      ServiceBus__Enabled: "false"
+      Worker__Enabled: "true"
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: developer_evaluation
+      POSTGRES_USER: developer
+      POSTGRES_PASSWORD: ev@luAt10n
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7.4.1-alpine
+    command: redis-server --requirepass ev@luAt10n
+    ports:
+      - "6379:6379"

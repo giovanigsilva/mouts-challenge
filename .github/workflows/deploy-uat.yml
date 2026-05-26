@@ -1,0 +1,30 @@
+name: deploy-uat
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - uat
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: uat
+    defaults:
+      run:
+        working-directory: template/backend
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - run: dotnet restore Ambev.DeveloperEvaluation.sln
+      - run: dotnet build Ambev.DeveloperEvaluation.sln --configuration Release --no-restore
+      - run: dotnet test Ambev.DeveloperEvaluation.sln --configuration Release --no-build
+      - run: dotnet publish src/Ambev.DeveloperEvaluation.WebApi/Ambev.DeveloperEvaluation.WebApi.csproj --configuration Release --output publish/webapi
+      - run: dotnet publish src/Ambev.DeveloperEvaluation.Worker/Ambev.DeveloperEvaluation.Worker.csproj --configuration Release --output publish/worker
+      - run: dotnet publish src/Ambev.DeveloperEvaluation.Functions/Ambev.DeveloperEvaluation.Functions.csproj --configuration Release --output publish/functions
+      - run: echo "Deploy UAT simulado. Configure Azure OIDC secrets para ativar deploy real."
