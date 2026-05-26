@@ -22,6 +22,7 @@ public sealed class CorrelationIdMiddleware
             : Guid.NewGuid().ToString();
 
         context.Items[HeaderName] = correlationId;
+        context.Response.Headers[HeaderName] = correlationId;
         context.Response.OnStarting(() =>
         {
             context.Response.Headers[HeaderName] = correlationId;

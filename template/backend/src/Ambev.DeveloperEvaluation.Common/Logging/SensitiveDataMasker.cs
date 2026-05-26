@@ -50,7 +50,7 @@ public static class SensitiveDataMasker
             return text;
 
         var masked = text;
-        masked = Regex.Replace(masked, "(authorization\\s*[:=]\\s*)[^\\s;]+", $"$1{Mask}", RegexOptions.IgnoreCase);
+        masked = Regex.Replace(masked, "(authorization\\s*[:=]\\s*)[^;\\r\\n]+", $"$1{Mask}", RegexOptions.IgnoreCase);
         masked = Regex.Replace(masked, "(bearer\\s+)[^\\s;]+", $"$1{Mask}", RegexOptions.IgnoreCase);
         masked = Regex.Replace(masked, "((password|senha|token|secret|apikey|api_key|credential|connectionstring)\\s*[:=]\\s*)[^;\\s]+", $"$1{Mask}", RegexOptions.IgnoreCase);
         return masked;
