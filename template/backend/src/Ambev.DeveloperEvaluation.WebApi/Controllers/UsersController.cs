@@ -12,7 +12,7 @@ using Ambev.DeveloperEvaluation.Common.Security.Recaptcha;
 using Microsoft.Extensions.Options;
 using Swashbuckle.AspNetCore.Annotations;
 
-namespace Ambev.DeveloperEvaluation.WebApi.Features.Users;
+namespace Ambev.DeveloperEvaluation.WebApi.Controllers;
 
 /// <summary>
 /// Endpoints de gerenciamento de usuarios.

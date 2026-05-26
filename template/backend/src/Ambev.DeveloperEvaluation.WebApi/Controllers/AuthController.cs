@@ -9,7 +9,7 @@ using Swashbuckle.AspNetCore.Annotations;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 
-namespace Ambev.DeveloperEvaluation.WebApi.Features.Auth;
+namespace Ambev.DeveloperEvaluation.WebApi.Controllers;
 
 /// <summary>
 /// Endpoints de autenticacao da API.
