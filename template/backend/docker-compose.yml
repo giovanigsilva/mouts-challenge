@@ -104,6 +104,67 @@ services:
       start_period: 5s
     restart: unless-stopped
 
+  prometheus:
+    container_name: developerstore_prometheus
+    image: prom/prometheus:v2.55.1
+    profiles:
+      - enterprise
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    depends_on:
+      - ambev.developerevaluation.webapi
+    restart: unless-stopped
+
+  grafana:
+    container_name: developerstore_grafana
+    image: grafana/grafana:11.3.1
+    profiles:
+      - enterprise
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: developerstore
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  postgres-exporter:
+    container_name: developerstore_postgres_exporter
+    image: prometheuscommunity/postgres-exporter:v0.16.0
+    profiles:
+      - enterprise
+    environment:
+      DATA_SOURCE_NAME: postgresql://developerstore_app:DevOnly_Pg_9fR!42sL%232026_Strong@ambev.developerevaluation.database:5432/developer_evaluation?sslmode=disable
+    ports:
+      - "9187:9187"
+    depends_on:
+      ambev.developerevaluation.database:
+        condition: service_healthy
+    restart: unless-stopped
+
+  redis-exporter:
+    container_name: developerstore_redis_exporter
+    image: oliver006/redis_exporter:v1.66.0
+    profiles:
+      - enterprise
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    ports:
+      - "9121:9121"
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
   datadog-agent:
     container_name: developerstore_datadog_agent
     image: gcr.io/datadoghq/agent:7
@@ -125,3 +186,5 @@ services:
 volumes:
   seq-data:
   redis-data:
+  prometheus-data:
+  grafana-data:
