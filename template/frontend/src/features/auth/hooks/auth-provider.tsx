@@ -37,7 +37,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     authTokenStorage.setToken(response.token)
     localStorage.setItem(userKey, JSON.stringify(nextUser))
     setUser(nextUser)
-    toast.success('Login realizado com sucesso.')
+    toast.success('Autenticação realizada com sucesso.')
   }, [])
 
   const logout = useCallback(() => {

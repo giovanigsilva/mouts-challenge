@@ -33,17 +33,30 @@ export function SaleEditPage() {
   }
 
   if (!saleQuery.data) {
-    return <ContentContainer>Venda nao encontrada.</ContentContainer>
+    return <ContentContainer>Venda não encontrada.</ContentContainer>
   }
 
   if (saleQuery.data.isCancelled) {
-    return <ContentContainer>Venda cancelada nao pode ser editada.</ContentContainer>
+    return <ContentContainer>Venda cancelada não pode ser editada.</ContentContainer>
   }
+
+  const hasCancelledItem = saleQuery.data.items.some((item) => item.isCancelled)
 
   return (
     <ContentContainer>
       <PageHeader title="Editar venda" description="Atualize os dados da venda. O backend recalcula descontos e totais." />
-      <SaleForm sale={saleQuery.data} submitLabel="Salvar alteracoes" isSubmitting={mutation.isPending} onSubmit={handleSubmit} />
+      {hasCancelledItem ? (
+        <div className="mb-4 rounded-2xl border border-amber-300/20 bg-amber-300/10 p-4 text-sm text-amber-100">
+          Item cancelado não pode ser editado.
+        </div>
+      ) : null}
+      <SaleForm
+        sale={saleQuery.data}
+        submitLabel="Salvar alterações"
+        isSubmitting={mutation.isPending}
+        isSubmitDisabled={hasCancelledItem}
+        onSubmit={handleSubmit}
+      />
     </ContentContainer>
   )
 }

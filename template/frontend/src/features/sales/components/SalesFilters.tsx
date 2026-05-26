@@ -25,7 +25,7 @@ export function SalesFilters({ filters, onChange }: SalesFiltersProps) {
   return (
     <div className="grid gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 md:grid-cols-3 xl:grid-cols-6">
       <div className="space-y-2">
-        <Label htmlFor="saleNumber">Numero</Label>
+        <Label htmlFor="saleNumber">Número</Label>
         <Input id="saleNumber" name="saleNumber" value={filters.saleNumber ?? ''} onChange={updateField} />
       </div>
       <div className="space-y-2">

@@ -6,11 +6,11 @@ type HealthIndicatorProps = {
 
 export function HealthIndicator({ status }: HealthIndicatorProps) {
   if (status === 'Healthy') {
-    return <Badge variant="success">Saudavel</Badge>
+    return <Badge variant="success">Saudável</Badge>
   }
 
   if (status === 'Unavailable') {
-    return <Badge variant="danger">Indisponivel</Badge>
+    return <Badge variant="danger">Indisponível</Badge>
   }
 
   return <Badge variant="warning">Degradado</Badge>

@@ -911,6 +911,20 @@ Abrir:
 http://localhost:5173
 ```
 
+Login rápido pelo botão demo:
+
+1. Acesse `http://localhost:5173/`.
+2. Na tela de login, clique em `Usar demo`.
+3. O formulário será preenchido com:
+
+```text
+E-mail: admin@developerstore.com
+Senha:  Senha@123456
+```
+
+4. Clique em `Entrar`.
+5. Após autenticar, o frontend abre o painel e passa a enviar o JWT automaticamente nas chamadas protegidas.
+
 Variaveis do frontend:
 
 ```text
@@ -946,8 +960,8 @@ Fluxo de avaliacao:
 
 1. Suba o backend com Docker.
 2. Rode o frontend em `http://localhost:5173`.
-3. Crie usuario pelo Swagger ou pela tela de usuario quando autenticado.
-4. Autentique em `/login`.
+3. Na tela de login, clique em `Usar demo` e depois em `Entrar`.
+4. Se preferir, crie usuario pelo Swagger ou pela tela de usuario quando autenticado e autentique em `/login`.
 5. Crie, liste, filtre, edite, detalhe, cancele item, cancele venda e remova venda.
 6. Consulte dashboard e health page.
 

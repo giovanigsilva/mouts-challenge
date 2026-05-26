@@ -11,7 +11,7 @@ export function ProtectedLayout() {
   }
 
   return (
-    <AppShell userLabel={user?.name || user?.email || 'Usuario autenticado'} onLogout={logout}>
+    <AppShell userLabel={user?.name || user?.email || 'Usuário autenticado'} onLogout={logout}>
       <Outlet />
     </AppShell>
   )

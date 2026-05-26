@@ -10,13 +10,13 @@ export type NormalizedApiError = {
 }
 
 const defaultMessages: Record<number, string> = {
-  400: 'A requisicao possui dados invalidos.',
-  401: 'Sessao expirada ou token invalido.',
-  403: 'Voce nao possui permissao para executar esta operacao.',
-  404: 'Recurso nao encontrado.',
-  409: 'Conflito ou violacao de regra de negocio.',
-  429: 'Muitas requisicoes em um curto periodo. Tente novamente mais tarde.',
-  499: 'A requisicao foi cancelada.',
+  400: 'A requisição possui dados inválidos.',
+  401: 'Sessão expirada ou token inválido.',
+  403: 'Você não possui permissão para executar esta operação.',
+  404: 'Recurso não encontrado.',
+  409: 'Conflito ou violação de regra de negócio.',
+  429: 'Muitas requisições em um curto período. Tente novamente mais tarde.',
+  499: 'A requisição foi cancelada.',
   500: 'Ocorreu um erro interno na API.',
 }
 

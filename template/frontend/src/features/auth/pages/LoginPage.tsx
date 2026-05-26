@@ -20,12 +20,12 @@ export function LoginPage() {
             <p className="text-sm uppercase tracking-[0.24em] text-cyan-200">DeveloperStore</p>
             <h1 className="mt-3 text-3xl font-semibold text-white">Entrar no console</h1>
             <p className="mt-2 text-sm text-slate-400">
-              Use um usuario criado na API para acessar vendas, dashboard e health checks.
+              Use um usuário criado na API para acessar vendas, painel e verificações de saúde.
             </p>
           </div>
           <LoginForm />
           <p className="mt-6 text-center text-sm text-slate-400">
-            Ainda nao tem usuario?{' '}
+            Ainda não tem usuário?{' '}
             <Link to="/users/new" className="font-medium text-cyan-200 hover:text-cyan-100">
               Crie pelo Swagger ou pela tela protegida.
             </Link>

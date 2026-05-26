@@ -15,7 +15,7 @@ export function HealthStatusCard() {
           <HeartPulse className="h-5 w-5" />
         </div>
         <div>
-          <p className="text-sm text-slate-400">Readiness</p>
+          <p className="text-sm text-slate-400">Prontidão</p>
           <div className="mt-2">{ready ? <HealthIndicator status={ready.status} /> : <span className="text-sm text-slate-500">Carregando...</span>}</div>
         </div>
       </div>

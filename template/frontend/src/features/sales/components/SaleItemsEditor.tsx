@@ -17,13 +17,20 @@ type SaleItemsEditorProps = {
 
 export function SaleItemsEditor({ control, register, errors, watchedItems }: SaleItemsEditorProps) {
   const { fields, append, remove } = useFieldArray({ control, name: 'items' })
+  const duplicatedProductMessage = 'Não é permitido repetir o mesmo produto na venda.'
+  const duplicatedProductId = watchedItems
+    .map((item) => item.productExternalId?.trim().toLowerCase())
+    .find((productId, index, productIds) => productId && productIds.indexOf(productId) !== index)
+  const duplicateWarning = duplicatedProductId ? duplicatedProductMessage : undefined
+  const schemaItemsErrorMessage = errors.items?.message ?? errors.items?.root?.message
+  const itemsErrorMessage = duplicateWarning ?? (schemaItemsErrorMessage === duplicatedProductMessage ? undefined : schemaItemsErrorMessage)
 
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-white">Itens</h2>
-          <p className="text-sm text-slate-400">O desconto e calculado automaticamente pelo dominio. O front exibe apenas uma previa.</p>
+          <p className="text-sm text-slate-400">O desconto é calculado automaticamente pelo domínio. O front exibe apenas uma prévia.</p>
         </div>
         <Button
           type="button"
@@ -35,7 +42,7 @@ export function SaleItemsEditor({ control, register, errors, watchedItems }: Sal
         </Button>
       </div>
 
-      {errors.items?.message ? <p className="text-sm text-rose-300">{errors.items.message}</p> : null}
+      {itemsErrorMessage ? <p className="text-sm text-rose-300">{itemsErrorMessage}</p> : null}
 
       <div className="space-y-3">
         {fields.map((field, index) => {
@@ -63,7 +70,7 @@ export function SaleItemsEditor({ control, register, errors, watchedItems }: Sal
                   {errors.items?.[index]?.quantity ? <p className="text-sm text-rose-300">{errors.items[index]?.quantity?.message}</p> : null}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`items.${index}.unitPrice`}>Preco unitario</Label>
+                  <Label htmlFor={`items.${index}.unitPrice`}>Preço unitário</Label>
                   <Input id={`items.${index}.unitPrice`} type="number" min={0} step="0.01" {...register(`items.${index}.unitPrice`, { valueAsNumber: true })} />
                   {errors.items?.[index]?.unitPrice ? <p className="text-sm text-rose-300">{errors.items[index]?.unitPrice?.message}</p> : null}
                 </div>

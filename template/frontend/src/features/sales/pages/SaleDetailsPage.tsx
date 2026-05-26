@@ -68,7 +68,7 @@ export function SaleDetailsPage() {
   }
 
   if (!saleQuery.data) {
-    return <ContentContainer>Venda nao encontrada.</ContentContainer>
+    return <ContentContainer>Venda não encontrada.</ContentContainer>
   }
 
   const sale = saleQuery.data

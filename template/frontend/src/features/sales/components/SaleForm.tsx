@@ -13,11 +13,12 @@ import { Label } from '@/shared/components/ui/label'
 type SaleFormProps = {
   sale?: Sale
   isSubmitting?: boolean
+  isSubmitDisabled?: boolean
   submitLabel: string
   onSubmit: (request: SaleRequest) => void
 }
 
-export function SaleForm({ sale, isSubmitting = false, submitLabel, onSubmit }: SaleFormProps) {
+export function SaleForm({ sale, isSubmitting = false, isSubmitDisabled = false, submitLabel, onSubmit }: SaleFormProps) {
   const {
     register,
     control,
@@ -46,7 +47,7 @@ export function SaleForm({ sale, isSubmitting = false, submitLabel, onSubmit }: 
   return (
     <form className="space-y-6" onSubmit={handleSubmit(submit)}>
       <div className="grid gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 md:grid-cols-2">
-        <Field label="Numero da venda" id="saleNumber" error={errors.saleNumber?.message}>
+        <Field label="Número da venda" id="saleNumber" error={errors.saleNumber?.message}>
           <Input id="saleNumber" {...register('saleNumber')} />
         </Field>
         <Field label="Data da venda" id="saleDate" error={errors.saleDate?.message}>
@@ -69,7 +70,7 @@ export function SaleForm({ sale, isSubmitting = false, submitLabel, onSubmit }: 
       <SaleItemsEditor control={control} register={register} errors={errors} watchedItems={watchedItems} />
 
       <div className="flex justify-end">
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" disabled={isSubmitting || isSubmitDisabled}>
           {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           {submitLabel}
         </Button>
@@ -93,9 +94,9 @@ function createDefaultValues(): SaleFormValues {
     saleNumber: `SALE-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`,
     saleDate: toDateTimeLocalValue(new Date().toISOString()),
     customerExternalId: '5c9d7b1e-2a63-4e69-9c55-4c0e8142f8c1',
-    customerName: 'Joao da Silva',
+    customerName: 'João da Silva',
     branchExternalId: '7a2b2c71-6c2e-4f54-8a7e-32159a4d53e2',
-    branchName: 'Loja Centro - Sao Paulo',
+    branchName: 'Loja Centro - São Paulo',
     items: [{ productExternalId: '33a8b4f9-4a6e-49c9-91df-ec7b40b3b1a1', productName: 'Camiseta DeveloperStore', quantity: 1, unitPrice: 0 }],
   }
 }

@@ -25,7 +25,7 @@ export function CreateUserPage() {
   } = useForm<CreateUserFormValues>({
     resolver: zodResolver(createUserSchema),
     defaultValues: {
-      username: 'Admin DeveloperStore',
+      username: 'Administrador DeveloperStore',
       email: 'admin@developerstore.com',
       phone: '11999999999',
       password: 'Senha@123456',
@@ -36,7 +36,7 @@ export function CreateUserPage() {
 
   const mutation = useMutation({
     mutationFn: createUser,
-    onSuccess: () => toast.success('Usuario criado com sucesso.'),
+    onSuccess: () => toast.success('Usuário criado com sucesso.'),
     onError: (error) => toast.error((error as unknown as NormalizedApiError).message),
   })
 
@@ -47,12 +47,12 @@ export function CreateUserPage() {
 
   return (
     <ContentContainer>
-      <PageHeader title="Criar usuario" description="Cria usuario para autenticar na API DeveloperStore." />
+      <PageHeader title="Criar usuário" description="Cria usuário para autenticar na API DeveloperStore." />
       <form className="grid gap-4 rounded-2xl border border-white/10 bg-white/5 p-5 md:grid-cols-2" onSubmit={handleSubmit(submit)}>
         <Field label="Nome" id="username" error={errors.username?.message}>
           <Input id="username" {...register('username')} />
         </Field>
-        <Field label="Email" id="email" error={errors.email?.message}>
+        <Field label="E-mail" id="email" error={errors.email?.message}>
           <Input id="email" type="email" {...register('email')} />
         </Field>
         <Field label="Telefone" id="phone" error={errors.phone?.message}>
@@ -63,23 +63,23 @@ export function CreateUserPage() {
         </Field>
         <Field label="Status" id="status" error={errors.status?.message}>
           <select id="status" className="h-11 w-full rounded-xl border border-white/10 bg-white/10 px-3 text-sm text-slate-100 outline-none" {...register('status', { valueAsNumber: true })}>
-            <option value={1}>Active</option>
-            <option value={2}>Inactive</option>
-            <option value={3}>Suspended</option>
+            <option value={1}>Ativo</option>
+            <option value={2}>Inativo</option>
+            <option value={3}>Suspenso</option>
           </select>
         </Field>
         <Field label="Perfil" id="role" error={errors.role?.message}>
           <select id="role" className="h-11 w-full rounded-xl border border-white/10 bg-white/10 px-3 text-sm text-slate-100 outline-none" {...register('role', { valueAsNumber: true })}>
-            <option value={1}>Customer</option>
-            <option value={2}>Manager</option>
-            <option value={3}>Admin</option>
+            <option value={1}>Cliente</option>
+            <option value={2}>Gerente</option>
+            <option value={3}>Administrador</option>
           </select>
         </Field>
         <div className="md:col-span-2">
-          {recaptchaConfig.enabled ? <p className="mb-3 text-xs text-cyan-200">Protecao anti-bot simulada ativa neste formulario.</p> : null}
+          {recaptchaConfig.enabled ? <p className="mb-3 text-xs text-cyan-200">Proteção anti-bot simulada ativa neste formulário.</p> : null}
           <Button type="submit" disabled={mutation.isPending}>
             {mutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            {mutation.isPending ? 'Criando...' : 'Criar usuario'}
+            {mutation.isPending ? 'Criando...' : 'Criar usuário'}
           </Button>
         </div>
       </form>

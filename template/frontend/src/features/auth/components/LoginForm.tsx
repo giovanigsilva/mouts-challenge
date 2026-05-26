@@ -54,7 +54,7 @@ export function LoginForm() {
   return (
     <form className="space-y-5" onSubmit={handleSubmit(submit)}>
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">E-mail</Label>
         <Input id="email" type="email" autoComplete="email" placeholder="admin@developerstore.com" {...register('email')} />
         {errors.email ? <p className="text-sm text-rose-300">{errors.email.message}</p> : null}
       </div>
@@ -84,10 +84,10 @@ export function LoginForm() {
               </span>
             </div>
             <p className="mt-1 text-xs leading-5 text-slate-300">
-              Protecao anti-bot local para login. Quando ativa, gera token por action sem usar Google real.
+              Proteção anti-bot local para login. Quando ativa, gera token por action sem usar Google real.
             </p>
             <p className="mt-2 text-[11px] uppercase tracking-wide text-cyan-200">
-              Provider: {recaptchaConfig.provider} | Action: {recaptchaConfig.loginAction}
+              Provedor: {recaptchaConfig.provider} | Ação: {recaptchaConfig.loginAction}
             </p>
           </div>
         </div>

@@ -2,12 +2,12 @@ import { apiClient } from '@/shared/api/api-client'
 import type { HealthEndpointKey, HealthEndpointResult, HealthResponse } from '@/features/health/types/health.types'
 
 const endpoints: Record<HealthEndpointKey, { path: string; label: string }> = {
-  live: { path: '/health/live', label: 'Liveness' },
-  ready: { path: '/health/ready', label: 'Readiness' },
-  logging: { path: '/health/logging', label: 'Logging' },
+  live: { path: '/health/live', label: 'Vida' },
+  ready: { path: '/health/ready', label: 'Prontidão' },
+  logging: { path: '/health/logging', label: 'Logs' },
   cache: { path: '/health/cache', label: 'Cache' },
-  metrics: { path: '/health/metrics', label: 'Metrics' },
-  enterprise: { path: '/health/enterprise', label: 'Stack enterprise' },
+  metrics: { path: '/health/metrics', label: 'Métricas' },
+  enterprise: { path: '/health/enterprise', label: 'Infraestrutura local' },
 }
 
 export async function getHealth(key: HealthEndpointKey): Promise<HealthEndpointResult> {

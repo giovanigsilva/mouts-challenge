@@ -1,22 +1,22 @@
 import { z } from 'zod'
 
-const uuidMessage = 'Informe um identificador UUID valido.'
+const uuidMessage = 'Informe um identificador UUID válido.'
 
 export const saleItemSchema = z.object({
   productExternalId: z.string().uuid(uuidMessage),
-  productName: z.string().min(1, 'Informe o nome do produto.').max(120, 'Use no maximo 120 caracteres.'),
-  quantity: z.number().int('Informe uma quantidade inteira.').min(1, 'Quantidade minima: 1.').max(20, 'Quantidade maxima: 20.'),
-  unitPrice: z.number().positive('Informe um preco unitario maior que zero.'),
+  productName: z.string().min(1, 'Informe o nome do produto.').max(120, 'Use no máximo 120 caracteres.'),
+  quantity: z.number().int('Informe uma quantidade inteira.').min(1, 'Quantidade mínima: 1.').max(20, 'Quantidade máxima: 20.'),
+  unitPrice: z.number().positive('Informe um preço unitário maior que zero.'),
 })
 
 export const saleSchema = z
   .object({
-    saleNumber: z.string().min(1, 'Informe o numero da venda.').max(50, 'Use no maximo 50 caracteres.'),
+    saleNumber: z.string().min(1, 'Informe o número da venda.').max(50, 'Use no máximo 50 caracteres.'),
     saleDate: z.string().min(1, 'Informe a data da venda.'),
     customerExternalId: z.string().uuid(uuidMessage),
-    customerName: z.string().min(1, 'Informe o cliente.').max(120, 'Use no maximo 120 caracteres.'),
+    customerName: z.string().min(1, 'Informe o cliente.').max(120, 'Use no máximo 120 caracteres.'),
     branchExternalId: z.string().uuid(uuidMessage),
-    branchName: z.string().min(1, 'Informe a filial.').max(120, 'Use no maximo 120 caracteres.'),
+    branchName: z.string().min(1, 'Informe a filial.').max(120, 'Use no máximo 120 caracteres.'),
     items: z.array(saleItemSchema).min(1, 'Informe pelo menos um item.'),
   })
   .superRefine((value, context) => {
@@ -26,7 +26,7 @@ export const saleSchema = z
       context.addIssue({
         code: 'custom',
         path: ['items'],
-        message: 'Nao e permitido repetir o mesmo produto na venda.',
+        message: 'Não é permitido repetir o mesmo produto na venda.',
       })
     }
   })

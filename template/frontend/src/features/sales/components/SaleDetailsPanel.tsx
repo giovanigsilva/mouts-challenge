@@ -18,7 +18,7 @@ export function SaleDetailsPanel({ sale, onCancelItem }: SaleDetailsPanelProps) 
     <div className="space-y-6">
       <div className="grid gap-4 lg:grid-cols-4">
         <SaleTotalsCard totalAmount={sale.totalAmount} itemsCount={sale.items.length} />
-        <InfoCard label="Numero" value={sale.saleNumber} />
+        <InfoCard label="Número" value={sale.saleNumber} />
         <InfoCard label="Data" value={formatDateTime(sale.saleDate)} />
         <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
           <p className="text-sm text-slate-400">Status</p>
@@ -39,11 +39,11 @@ export function SaleDetailsPanel({ sale, onCancelItem }: SaleDetailsPanelProps) 
             <tr>
               <th className="px-4 py-3">Produto</th>
               <th className="px-4 py-3">Quantidade</th>
-              <th className="px-4 py-3">Unitario</th>
+              <th className="px-4 py-3">Unitário</th>
               <th className="px-4 py-3">Desconto</th>
               <th className="px-4 py-3">Total</th>
               <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-right">Acoes</th>
+              <th className="px-4 py-3 text-right">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/10">

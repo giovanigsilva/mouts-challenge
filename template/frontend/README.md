@@ -61,6 +61,23 @@ Abra:
 http://localhost:5173
 ```
 
+## Login rápido
+
+Para entrar na aplicação usando as credenciais de demonstração:
+
+1. Acesse `http://localhost:5173/`.
+2. Clique em `Usar demo`.
+3. O formulário será preenchido com:
+
+```text
+E-mail: admin@developerstore.com
+Senha:  Senha@123456
+```
+
+4. Clique em `Entrar`.
+
+Após o login, o frontend salva o JWT localmente e envia `Authorization: Bearer {token}` automaticamente nas chamadas da API.
+
 ## Rodar com Docker
 
 O compose fica no backend e tambem carrega o frontend:
@@ -102,8 +119,8 @@ npm run preview
 ## Fluxo de teste
 
 1. Acesse `http://localhost:5173`.
-2. Crie um usuario pela API/Swagger ou pela tela `Criar usuario` quando autenticado.
-3. Autentique em `/login`.
+2. Clique em `Usar demo`.
+3. Clique em `Entrar`.
 4. Acesse `Vendas`.
 5. Crie uma venda em `Nova venda`.
 6. Consulte detalhes da venda.

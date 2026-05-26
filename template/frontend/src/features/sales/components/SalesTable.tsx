@@ -24,14 +24,14 @@ export function SalesTable({ sales, onCancel, onDelete }: SalesTableProps) {
         <table className="w-full min-w-[960px] text-left text-sm">
           <thead className="bg-white/5 text-xs uppercase tracking-wide text-slate-400">
             <tr>
-              <th className="px-4 py-3">Numero</th>
+              <th className="px-4 py-3">Número</th>
               <th className="px-4 py-3">Cliente</th>
               <th className="px-4 py-3">Filial</th>
               <th className="px-4 py-3">Data</th>
               <th className="px-4 py-3">Total</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Itens</th>
-              <th className="px-4 py-3 text-right">Acoes</th>
+              <th className="px-4 py-3 text-right">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/10">

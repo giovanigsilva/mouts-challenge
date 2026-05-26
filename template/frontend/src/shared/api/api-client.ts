@@ -34,7 +34,7 @@ apiClient.interceptors.response.use(
 
     if (normalized.status === 401) {
       authTokenStorage.clearToken()
-      toast.error('Sessao expirada ou token invalido.')
+      toast.error('Sessão expirada ou token inválido.')
 
       if (window.location.pathname !== '/login') {
         window.location.assign('/login')

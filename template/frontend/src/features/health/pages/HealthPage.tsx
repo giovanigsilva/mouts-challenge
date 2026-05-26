@@ -17,7 +17,7 @@ export function HealthPage() {
   return (
     <ContentContainer>
       <PageHeader
-        title="Saude da API"
+        title="Saúde da API"
         description="Consulta endpoints de health do backend e mede o tempo de resposta observado pelo frontend."
         actions={
           <Button type="button" variant="secondary" onClick={refresh}>
@@ -33,17 +33,17 @@ export function HealthPage() {
           return (
             <Card key={result?.key ?? index}>
               <CardHeader>
-                <CardTitle>{result?.label ?? 'Health'}</CardTitle>
+                <CardTitle>{result?.label ?? 'Saúde'}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {query.isLoading ? <p className="text-sm text-slate-400">Carregando...</p> : null}
                 {result ? (
                   <>
                     <HealthIndicator status={result.status} />
-                    <p className="text-sm text-slate-400">Servico monitorado: {result.path}</p>
-                    {result.data?.serviceName ? <p className="text-sm text-slate-400">Aplicacao: {result.data.serviceName}</p> : null}
+                    <p className="text-sm text-slate-400">Serviço monitorado: {result.path}</p>
+                    {result.data?.serviceName ? <p className="text-sm text-slate-400">Aplicação: {result.data.serviceName}</p> : null}
                     <p className="text-sm text-slate-400">Tempo: {result.elapsedMs} ms</p>
-                    <p className="break-all text-xs text-slate-500">CorrelationId: {result.correlationId ?? '-'}</p>
+                    <p className="break-all text-xs text-slate-500">ID de correlação: {result.correlationId ?? '-'}</p>
                     {result.data?.healthChecks?.map((check) => (
                       <div key={check.name} className="rounded-xl bg-white/5 p-3 text-sm text-slate-300">
                         <p className="font-medium text-white">{check.name}</p>

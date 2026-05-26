@@ -80,7 +80,7 @@ export function SalesListPage() {
         {salesQuery.data ? (
           <div className="flex items-center justify-between text-sm text-slate-400">
             <span>
-              Pagina {salesQuery.data.currentPage} de {salesQuery.data.totalPages || 1}. Total: {salesQuery.data.totalCount}
+              Página {salesQuery.data.currentPage} de {salesQuery.data.totalPages || 1}. Total: {salesQuery.data.totalCount}
             </span>
             <div className="flex gap-2">
               <Button
@@ -97,7 +97,7 @@ export function SalesListPage() {
                 disabled={filters.page >= salesQuery.data.totalPages}
                 onClick={() => setFilters((current) => ({ ...current, page: current.page + 1 }))}
               >
-                Proxima
+                Próxima
               </Button>
             </div>
           </div>

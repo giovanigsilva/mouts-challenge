@@ -18,8 +18,8 @@ export function DashboardPage() {
   return (
     <ContentContainer>
       <PageHeader
-        title="Dashboard"
-        description="Indicadores calculados sobre a pagina de vendas carregada. O backend nao expoe endpoint agregado nesta versao."
+        title="Painel"
+        description="Indicadores calculados sobre a página de vendas carregada. O backend não expõe endpoint agregado nesta versão."
       />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard title="Vendas realizadas" value={String(sales.length)} icon={ShoppingCart} />

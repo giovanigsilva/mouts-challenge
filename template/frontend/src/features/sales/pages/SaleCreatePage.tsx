@@ -26,7 +26,7 @@ export function SaleCreatePage() {
     <ContentContainer>
       <PageHeader
         title="Nova venda"
-        description="Informe cliente, filial e itens. Descontos e totais sao calculados novamente pelo backend."
+        description="Informe cliente, filial e itens. Descontos e totais são calculados novamente pelo backend."
       />
       <SaleForm submitLabel="Criar venda" isSubmitting={mutation.isPending} onSubmit={handleSubmit} />
     </ContentContainer>
