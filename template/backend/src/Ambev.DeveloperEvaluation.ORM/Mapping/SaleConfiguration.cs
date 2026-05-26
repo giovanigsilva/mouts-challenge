@@ -10,8 +10,7 @@ public class SaleConfiguration : IEntityTypeConfiguration<Sale>
     {
         builder.ToTable("Sales");
 
-        builder.HasKey(sale => sale.Id);
-        builder.Property(sale => sale.Id).HasColumnType("uuid").HasDefaultValueSql("gen_random_uuid()");
+        builder.ConfigureBaseEntity();
         builder.Property(sale => sale.SaleNumber).IsRequired().HasMaxLength(60);
         builder.Property(sale => sale.SaleDate).IsRequired();
         builder.Property(sale => sale.CustomerExternalId).IsRequired();
@@ -20,8 +19,6 @@ public class SaleConfiguration : IEntityTypeConfiguration<Sale>
         builder.Property(sale => sale.BranchName).IsRequired().HasMaxLength(120);
         builder.Property(sale => sale.TotalAmount).HasPrecision(18, 2);
         builder.Property(sale => sale.IsCancelled).IsRequired();
-        builder.Property(sale => sale.CreatedAt).IsRequired();
-        builder.Property(sale => sale.UpdatedAt);
 
         builder.Ignore(sale => sale.DomainEvents);
 
