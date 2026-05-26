@@ -1,6 +1,7 @@
 using Ambev.DeveloperEvaluation.Common.HealthChecks;
 using Ambev.DeveloperEvaluation.Common.Logging;
 using Ambev.DeveloperEvaluation.Common.Security;
+using Ambev.DeveloperEvaluation.Common.Security.Recaptcha;
 using Ambev.DeveloperEvaluation.Common.Validation;
 using Ambev.DeveloperEvaluation.IoC;
 using Ambev.DeveloperEvaluation.WebApi.HealthChecks;
@@ -25,6 +26,8 @@ public static class WebApiServiceExtensions
             .AddCheck<SecurityConfigurationHealthCheck>("SecurityConfiguration", tags: ["readiness"])
             .AddCheck<VaultHealthCheck>("Vault", tags: ["readiness"]);
         builder.Services.AddDeveloperStoreSwagger(builder.Configuration);
+        builder.Services.Configure<RecaptchaOptions>(builder.Configuration.GetSection("Recaptcha"));
+        builder.Services.AddScoped<IRecaptchaVerifier, SimulatedRecaptchaVerifier>();
         builder.Services.AddDeveloperStoreCors(builder.Configuration);
         builder.Services.AddDeveloperStoreRateLimiting(builder.Configuration);
         builder.Services.AddJwtAuthentication(builder.Configuration);
