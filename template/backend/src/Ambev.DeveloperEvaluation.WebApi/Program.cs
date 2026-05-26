@@ -36,6 +36,7 @@ public class Program
 
             builder.Services.AddSwaggerGen(options =>
             {
+                options.EnableAnnotations();
                 options.SwaggerDoc("v1", new OpenApiInfo
                 {
                     Title = builder.Configuration["Swagger:Title"] ?? "DeveloperStore Sales API",

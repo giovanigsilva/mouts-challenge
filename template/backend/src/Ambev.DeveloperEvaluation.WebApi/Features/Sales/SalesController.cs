@@ -12,12 +12,14 @@ using Ambev.DeveloperEvaluation.WebApi.Features.Sales.UpdateSale;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace Ambev.DeveloperEvaluation.WebApi.Features.Sales;
 
 [ApiController]
 [Route("api/sales")]
 [Authorize]
+[Tags("Vendas")]
 public class SalesController : BaseController
 {
     private readonly IMediator _mediator;
@@ -29,6 +31,7 @@ public class SalesController : BaseController
 
     [HttpPost]
     [Authorize(Policy = "Sales.Write")]
+    [SwaggerOperation(Summary = "Cria uma venda", Description = "Cria uma venda com snapshot denormalizado de cliente, filial e produtos. Os descontos sao calculados automaticamente pelo dominio e o evento SaleCreated e registrado no log da aplicacao.")]
     [ProducesResponseType(typeof(ApiResponseWithData<SaleResult>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
@@ -70,6 +73,7 @@ public class SalesController : BaseController
 
     [HttpGet]
     [Authorize(Policy = "Sales.Read")]
+    [SwaggerOperation(Summary = "Lista vendas", Description = "Lista vendas com paginacao e filtros opcionais por numero da venda, cliente, filial, status de cancelamento e periodo.")]
     [ProducesResponseType(typeof(PaginatedResponse<SaleResult>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
@@ -91,6 +95,7 @@ public class SalesController : BaseController
 
     [HttpGet("{id}")]
     [Authorize(Policy = "Sales.Read")]
+    [SwaggerOperation(Summary = "Busca venda por ID", Description = "Retorna os dados completos da venda, incluindo itens, descontos calculados, total financeiro e status de cancelamento.")]
     [ProducesResponseType(typeof(ApiResponseWithData<SaleResult>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
@@ -110,6 +115,7 @@ public class SalesController : BaseController
 
     [HttpPut("{id}")]
     [Authorize(Policy = "Sales.Write")]
+    [SwaggerOperation(Summary = "Atualiza uma venda", Description = "Atualiza os dados da venda e substitui seus itens. Vendas canceladas nao podem ser alteradas. O total e recalculado pelo aggregate e o evento SaleModified e registrado no log.")]
     [ProducesResponseType(typeof(ApiResponseWithData<SaleResult>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
@@ -153,6 +159,7 @@ public class SalesController : BaseController
 
     [HttpDelete("{id}")]
     [Authorize(Policy = "Sales.Delete")]
+    [SwaggerOperation(Summary = "Remove uma venda", Description = "Remove fisicamente a venda informada. Cancelamento de venda deve ser feito pelo endpoint PATCH /api/sales/{id}/cancel.")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
@@ -171,6 +178,7 @@ public class SalesController : BaseController
 
     [HttpPatch("{id}/cancel")]
     [Authorize(Policy = "Sales.Cancel")]
+    [SwaggerOperation(Summary = "Cancela uma venda", Description = "Marca a venda como cancelada. Uma venda cancelada nao permite novas alteracoes de itens e registra o evento SaleCancelled no log.")]
     [ProducesResponseType(typeof(ApiResponseWithData<SaleResult>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
@@ -190,6 +198,7 @@ public class SalesController : BaseController
 
     [HttpPatch("{id}/items/{itemId}/cancel")]
     [Authorize(Policy = "Sales.Cancel")]
+    [SwaggerOperation(Summary = "Cancela item da venda", Description = "Cancela um item especifico da venda, recalcula o total financeiro sem o item cancelado e registra o evento ItemCancelled no log.")]
     [ProducesResponseType(typeof(ApiResponseWithData<SaleResult>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
