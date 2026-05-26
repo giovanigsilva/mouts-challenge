@@ -1,0 +1,39 @@
+using Ambev.DeveloperEvaluation.Application.Sales.Common;
+using Ambev.DeveloperEvaluation.Domain.Entities;
+using Ambev.DeveloperEvaluation.Domain.Repositories;
+using AutoMapper;
+using FluentValidation;
+using MediatR;
+
+namespace Ambev.DeveloperEvaluation.Application.Sales.CreateSale;
+
+public class CreateSaleHandler : IRequestHandler<CreateSaleCommand, SaleResult>
+{
+    private readonly ISaleRepository _saleRepository;
+    private readonly IMapper _mapper;
+
+    public CreateSaleHandler(ISaleRepository saleRepository, IMapper mapper)
+    {
+        _saleRepository = saleRepository;
+        _mapper = mapper;
+    }
+
+    public async Task<SaleResult> Handle(CreateSaleCommand command, CancellationToken cancellationToken)
+    {
+        var validator = new CreateSaleValidator();
+        var validationResult = await validator.ValidateAsync(command, cancellationToken);
+
+        if (!validationResult.IsValid)
+            throw new ValidationException(validationResult.Errors);
+
+        var existingSale = await _saleRepository.GetBySaleNumberAsync(command.SaleNumber, cancellationToken);
+        if (existingSale is not null)
+            throw new InvalidOperationException($"Venda com numero {command.SaleNumber} ja existe.");
+
+        var items = command.Items.Select(item => new SaleItem(item.ProductExternalId, item.ProductName, item.Quantity, item.UnitPrice));
+        var sale = new Sale(command.SaleNumber, command.SaleDate, command.CustomerExternalId, command.CustomerName, command.BranchExternalId, command.BranchName, items);
+        var createdSale = await _saleRepository.CreateAsync(sale, cancellationToken);
+
+        return _mapper.Map<SaleResult>(createdSale);
+    }
+}
