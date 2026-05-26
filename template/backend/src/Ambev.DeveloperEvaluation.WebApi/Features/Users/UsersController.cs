@@ -33,6 +33,9 @@ public class UsersController : BaseController
     /// </summary>
     /// <param name="mediator">Instancia do MediatR usada para executar os casos de uso.</param>
     /// <param name="mapper">Instancia do AutoMapper usada para converter requests e responses.</param>
+    /// <param name="recaptchaVerifier">Servico de verificacao anti-robo em modo simulado.</param>
+    /// <param name="recaptchaOptions">Configuracoes de reCAPTCHA usadas pelo endpoint.</param>
+    /// <param name="logger">Logger estruturado do controlador.</param>
     public UsersController(IMediator mediator, IMapper mapper, IRecaptchaVerifier recaptchaVerifier, IOptions<RecaptchaOptions> recaptchaOptions, ILogger<UsersController> logger)
     {
         _mediator = mediator;
@@ -49,7 +52,7 @@ public class UsersController : BaseController
     /// <param name="cancellationToken">Token de cancelamento da requisicao.</param>
     /// <returns>Dados do usuario criado.</returns>
     [HttpPost]
-    [SwaggerOperation(OperationId = "Users_CreateUser", Summary = "Cria um novo usuario.", Description = "Cria um usuario com nome, email, telefone, senha, status e perfil. A senha e recebida apenas no request e nao e retornada na resposta.")]
+    [SwaggerOperation(OperationId = "Users_CreateUser", Summary = "Cria um novo usuario.", Description = "Valida a protecao anti-robo simulada quando Recaptcha:Enabled=true e cria um usuario com nome, email, telefone, senha, status e perfil. No modo simulado, envie recaptchaToken no formato simulated:create_user:{timestamp}:{nonce}. A senha e recebida apenas no request e nao e retornada na resposta.")]
     [ProducesResponseType(typeof(ApiResponseWithData<CreateUserResponse>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request, CancellationToken cancellationToken)

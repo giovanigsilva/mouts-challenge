@@ -31,6 +31,9 @@ public class AuthController : BaseController
     /// </summary>
     /// <param name="mediator">Instancia do MediatR usada para executar o caso de uso.</param>
     /// <param name="mapper">Instancia do AutoMapper usada para converter request e response.</param>
+    /// <param name="recaptchaVerifier">Servico de verificacao anti-robo em modo simulado.</param>
+    /// <param name="recaptchaOptions">Configuracoes de reCAPTCHA usadas pelo endpoint.</param>
+    /// <param name="logger">Logger estruturado do controlador.</param>
     public AuthController(IMediator mediator, IMapper mapper, IRecaptchaVerifier recaptchaVerifier, IOptions<RecaptchaOptions> recaptchaOptions, ILogger<AuthController> logger)
     {
         _mediator = mediator;
@@ -47,7 +50,7 @@ public class AuthController : BaseController
     /// <param name="cancellationToken">Token de cancelamento da requisicao.</param>
     /// <returns>Token JWT e dados basicos do usuario autenticado.</returns>
     [HttpPost]
-    [SwaggerOperation(OperationId = "Auth_AuthenticateUser", Summary = "Autentica um usuario.", Description = "Valida email e senha, executa o fluxo de autenticacao existente e retorna um token JWT. Use o token retornado no botao Authorize do Swagger no formato Bearer {token}.")]
+    [SwaggerOperation(OperationId = "Auth_AuthenticateUser", Summary = "Autentica um usuario.", Description = "Valida a protecao anti-robo simulada quando Recaptcha:Enabled=true, valida email e senha, executa o fluxo de autenticacao existente e retorna um token JWT. No modo simulado, envie recaptchaToken no formato simulated:login:{timestamp}:{nonce}. Use o token JWT retornado no botao Authorize do Swagger no formato Bearer {token}.")]
     [ProducesResponseType(typeof(ApiResponseWithData<AuthenticateUserResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]

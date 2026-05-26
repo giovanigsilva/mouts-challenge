@@ -72,6 +72,8 @@ public static class SwaggerConfigurationExtensions
 
         Autenticacao: endpoints de Sales exigem JWT Bearer. Use o endpoint de autenticacao, copie o token e clique em Authorize informando Bearer seguido do token.
 
+        Protecao anti-bot: esta prova usa reCAPTCHA v3 em modo simulado para proteger login e criacao de usuario sem depender de chave real, internet ou Google. Quando Recaptcha:Enabled=true, o frontend envia recaptchaToken por acao e o backend valida prefixo, action, expiracao e score simulado. Actions usadas: login e create_user.
+
         Padrao de resposta: a API usa ApiResponse, ApiResponseWithData<T> e PaginatedResponse<T>. Erros retornam success=false e correlationId quando tratados pelo middleware global.
 
         Segredos: em Development a API pode carregar segredos do HashiCorp Vault local em Docker quando Vault:Enabled=true. Se o Vault local estiver indisponivel em Development, existe fallback controlado para appsettings/env vars. Em UAT e Production, segredos devem vir de variaveis de ambiente ou do provedor seguro do ambiente hospedado. Production rejeita segredos fracos, placeholders e valores development-only.
