@@ -404,7 +404,7 @@ curl.exe -i http://localhost:8080/health/ready
 
 `/health/ready` valida readiness e conectividade com PostgreSQL.
 
-## Swagger
+## Documentacao Swagger/OpenAPI
 
 Docker:
 
@@ -425,6 +425,40 @@ No Swagger:
 3. Copie `data.token`.
 4. Clique em `Authorize`.
 5. Informe `Bearer {token}`.
+
+O Swagger foi configurado para funcionar como documentacao principal da API:
+
+- Titulo: `DeveloperStore Sales API`.
+- Descricao em portugues do Brasil com arquitetura, Sales, regras de desconto, eventos logados, ambientes, health checks e padrao de resposta.
+- Botao `Authorize` com JWT Bearer.
+- Header opcional `X-Correlation-Id` documentado nas operacoes.
+- Tags em portugues: `Autenticacao`, `Usuarios`, `Vendas`, `Cancelamentos` e `Saude`.
+- OperationIds estaveis para integracao externa.
+- Exemplos de request e response para criacao de venda.
+- Erros padronizados documentados sem stack trace, segredo, SQL ou connection string.
+
+Operacao rapida pelo Swagger:
+
+1. Execute a API.
+2. Abra `/swagger`.
+3. Crie ou use um usuario.
+4. Autentique em `POST /api/Auth`.
+5. Autorize com `Bearer {token}`.
+6. Execute `POST /api/sales`.
+7. Execute `GET /api/sales`.
+8. Execute os endpoints de consulta, atualizacao e cancelamento.
+
+Comportamento por ambiente:
+
+- Development: Swagger habilitado e detailed errors habilitados.
+- UAT: Swagger habilitado para avaliacao e detailed errors limitados.
+- Production: Swagger controlado por configuracao e desabilitado por padrao em uso real.
+
+Guia detalhado:
+
+```text
+template/backend/docs/swagger.md
+```
 
 ## Exemplo Completo com Curl
 
@@ -590,6 +624,9 @@ feature: documentar execucao ambientes e validacao do projeto
 feature: ajustar validacao final da entrega
 feature: ajustar smoke test de autenticacao e vendas
 feature: atualizar documentacao oficial da prova
+feature: melhorar configuracao openapi do swagger
+feature: documentar endpoints de vendas no swagger
+feature: documentar autenticacao e seguranca no swagger
 ```
 
 ## Documentacao Complementar
