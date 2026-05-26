@@ -1,15 +1,22 @@
+import { AppShell } from '@/shared/components/layout/AppShell'
+import { ContentContainer } from '@/shared/components/layout/ContentContainer'
+import { PageHeader } from '@/shared/components/layout/PageHeader'
+import { GlassCard } from '@/shared/components/glass/GlassCard'
+
 export function BootstrapPage() {
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100">
-      <section className="mx-auto flex min-h-screen max-w-5xl flex-col justify-center px-6">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-xl">
-          <p className="text-sm uppercase tracking-[0.2em] text-cyan-300">DeveloperStore</p>
-          <h1 className="mt-4 text-4xl font-semibold">Frontend React inicializado</h1>
-          <p className="mt-4 max-w-2xl text-slate-300">
-            Base Vite, React, TypeScript, Tailwind CSS e TanStack Query pronta para evoluir as telas de Auth, Sales, Dashboard e Health.
+    <AppShell>
+      <ContentContainer>
+        <PageHeader
+          title="Frontend React inicializado"
+          description="Base visual enterprise com layout, glassmorphism, Tailwind CSS, componentes reutilizáveis e navegação pronta para receber Auth, Sales, Dashboard e Health."
+        />
+        <GlassCard className="p-6">
+          <p className="text-sm text-slate-300">
+            A estrutura visual já está separada em componentes de layout, UI e glass. As próximas etapas conectam API, autenticação e fluxos de vendas.
           </p>
-        </div>
-      </section>
-    </main>
+        </GlassCard>
+      </ContentContainer>
+    </AppShell>
   )
 }
