@@ -82,7 +82,7 @@ public class SalesController : BaseController
     {
         var response = await _mediator.Send(query, cancellationToken);
 
-        return Ok(new PaginatedResponse<SaleResult>
+        return new OkObjectResult(new PaginatedResponse<SaleResult>
         {
             Success = true,
             Message = "Vendas recuperadas com sucesso.",
@@ -105,7 +105,7 @@ public class SalesController : BaseController
     {
         var response = await _mediator.Send(new GetSaleQuery { Id = id }, cancellationToken);
 
-        return Ok(new ApiResponseWithData<SaleResult>
+        return new OkObjectResult(new ApiResponseWithData<SaleResult>
         {
             Success = true,
             Message = "Venda recuperada com sucesso.",
@@ -149,7 +149,7 @@ public class SalesController : BaseController
 
         var response = await _mediator.Send(command, cancellationToken);
 
-        return Ok(new ApiResponseWithData<SaleResult>
+        return new OkObjectResult(new ApiResponseWithData<SaleResult>
         {
             Success = true,
             Message = "Venda atualizada com sucesso.",
@@ -169,7 +169,7 @@ public class SalesController : BaseController
     {
         await _mediator.Send(new DeleteSaleCommand { Id = id }, cancellationToken);
 
-        return Ok(new ApiResponse
+        return new OkObjectResult(new ApiResponse
         {
             Success = true,
             Message = "Venda removida com sucesso."
@@ -188,7 +188,7 @@ public class SalesController : BaseController
     {
         var response = await _mediator.Send(new CancelSaleCommand { Id = id }, cancellationToken);
 
-        return Ok(new ApiResponseWithData<SaleResult>
+        return new OkObjectResult(new ApiResponseWithData<SaleResult>
         {
             Success = true,
             Message = "Venda cancelada com sucesso.",
@@ -208,7 +208,7 @@ public class SalesController : BaseController
     {
         var response = await _mediator.Send(new CancelSaleItemCommand { SaleId = id, ItemId = itemId }, cancellationToken);
 
-        return Ok(new ApiResponseWithData<SaleResult>
+        return new OkObjectResult(new ApiResponseWithData<SaleResult>
         {
             Success = true,
             Message = "Item da venda cancelado com sucesso.",
