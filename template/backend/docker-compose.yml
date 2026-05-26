@@ -12,10 +12,21 @@ services:
       - Jwt__SecretKey=DevelopmentOnlySecretKeyForDeveloperStoreApi12345
       - Jwt__Issuer=DeveloperStore
       - Jwt__Audience=DeveloperStore
+      - Seq__Enabled=true
+      - Seq__Url=http://seq:5341
+      - Observability__EnableSeqFallback=true
+      - Observability__EnableDatadog=true
+      - Observability__MaskSensitiveData=true
+      - DD_SERVICE=${DD_SERVICE:-developerstore-sales-api}
+      - DD_ENV=${DD_ENV:-development}
+      - DD_VERSION=${DD_VERSION:-1.0.0}
+    labels:
+      com.datadoghq.ad.logs: '[{"source":"csharp","service":"developerstore-sales-api"}]'
     ports:
       - "8080:8080"
     depends_on:
       - ambev.developerevaluation.database
+      - seq
 
   ambev.developerevaluation.database:
     container_name: ambev_developer_evaluation_database
@@ -28,3 +39,35 @@ services:
     ports:
       - "5432:5432"
     restart: unless-stopped
+
+  seq:
+    container_name: developerstore_seq
+    image: datalust/seq:2024.3
+    environment:
+      ACCEPT_EULA: "Y"
+    ports:
+      - "5341:80"
+    volumes:
+      - seq-data:/data
+    restart: unless-stopped
+
+  datadog-agent:
+    container_name: developerstore_datadog_agent
+    image: gcr.io/datadoghq/agent:7
+    environment:
+      DD_API_KEY: ${DD_API_KEY:-}
+      DD_SITE: ${DD_SITE:-datadoghq.com}
+      DD_LOGS_ENABLED: "true"
+      DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL: "true"
+      DD_CONTAINER_EXCLUDE: "name:developerstore_datadog_agent name:developerstore_seq name:ambev_developer_evaluation_database"
+      DD_SERVICE: ${DD_SERVICE:-developerstore-sales-api}
+      DD_ENV: ${DD_ENV:-development}
+      DD_VERSION: ${DD_VERSION:-1.0.0}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc/:/host/proc/:ro
+      - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
+    restart: unless-stopped
+
+volumes:
+  seq-data:
