@@ -8,6 +8,13 @@ public sealed class DefaultErrorResponsesOperationFilter : IOperationFilter
 {
     public void Apply(OpenApiOperation operation, OperationFilterContext context)
     {
+        AddResponse(operation, "400", "Requisicao invalida, erro de validacao ou violacao de regra de negocio.");
+        AddResponse(operation, "401", "Autenticacao ausente ou invalida.");
+        AddResponse(operation, "403", "Usuario autenticado sem permissao suficiente para a operacao.");
+        AddResponse(operation, "404", "Recurso nao encontrado.");
+        AddResponse(operation, "408", "A requisicao excedeu o tempo limite de processamento.");
+        AddResponse(operation, "409", "Conflito ao processar a operacao, como concorrencia de dados.");
+        AddResponse(operation, "499", "Requisicao cancelada pelo cliente antes da conclusao do processamento.");
         AddResponse(operation, "500", "Erro interno inesperado. Informe o correlationId ao suporte.");
     }
 

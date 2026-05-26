@@ -93,6 +93,18 @@ Listagens paginadas retornam:
 
 Erros tratados pelo middleware global incluem `correlationId` e `timestamp` para rastreabilidade.
 
+Exemplo de erro tratado:
+
+```json
+{
+  "success": false,
+  "message": "Venda com ID informado nao encontrada.",
+  "errors": [],
+  "correlationId": "a94fb91b-63e4-46c6-bd3d-82a89f7e1a4d",
+  "timestamp": "2026-05-26T14:30:00Z"
+}
+```
+
 ## Erros documentados
 
 O Swagger documenta respostas de erro sem expor stack trace, SQL, connection string, JWT ou segredo:
@@ -101,9 +113,14 @@ O Swagger documenta respostas de erro sem expor stack trace, SQL, connection str
 - `401`: autenticacao ausente ou invalida.
 - `403`: usuario autenticado sem permissao suficiente, quando aplicavel.
 - `404`: recurso nao encontrado.
+- `408`: tempo limite de processamento.
+- `409`: conflito de concorrencia de dados.
+- `499`: requisicao cancelada pelo cliente antes da conclusao.
 - `500`: erro inesperado tratado pelo middleware global.
 
 O projeto nao documenta `ProblemDetails` porque o envelope real e baseado em `ApiResponse`.
+
+`OperationCanceledException` nao e tratada como erro interno generico. Quando o cancelamento vem do cliente, a API registra log leve e tenta retornar `499 Client Closed Request`.
 
 ## Header X-Correlation-Id
 
@@ -114,6 +131,14 @@ X-Correlation-Id: a94fb91b-63e4-46c6-bd3d-82a89f7e1a4d
 ```
 
 Se o cliente nao enviar o header, a API gera um identificador automaticamente e usa esse valor nos logs e respostas de erro.
+
+O middleware tambem adiciona `X-Correlation-Id` na resposta HTTP.
+
+## CancellationToken
+
+Os controllers recebem `CancellationToken` da requisicao e propagam para o MediatR. Os handlers propagam o token para repositories e validators. Os repositories usam o token nas chamadas async do EF Core, como `SaveChangesAsync`, `FirstOrDefaultAsync`, `CountAsync` e `ToListAsync`.
+
+Se o cliente cancelar a requisicao, o fluxo deve parar sem transformar o cancelamento em erro 500.
 
 ## Regras de desconto
 

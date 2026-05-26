@@ -404,6 +404,8 @@ curl.exe -i http://localhost:8080/health/ready
 
 `/health/ready` valida readiness e conectividade com PostgreSQL.
 
+As respostas de health nao expõem detalhes internos de excecao. Quando uma dependencia falha, a API retorna uma mensagem operacional segura.
+
 ## Documentacao Swagger/OpenAPI
 
 Docker:
@@ -436,6 +438,7 @@ O Swagger foi configurado para funcionar como documentacao principal da API:
 - OperationIds estaveis para integracao externa.
 - Exemplos de request e response para criacao de venda.
 - Erros padronizados documentados sem stack trace, segredo, SQL ou connection string.
+- Respostas `408`, `409`, `499` e `500` documentadas para timeout, conflito, cancelamento pelo cliente e erro inesperado.
 
 Operacao rapida pelo Swagger:
 
@@ -604,6 +607,42 @@ Implementado:
 - Security headers basicos.
 - CorrelationId via `X-Correlation-Id`.
 - Global exception middleware.
+
+## Tratamento de Erros e CancellationToken
+
+Erros HTTP sao tratados pelo `GlobalExceptionMiddleware`, com envelope padronizado:
+
+```json
+{
+  "success": false,
+  "message": "Mensagem segura em portugues.",
+  "errors": [],
+  "correlationId": "a94fb91b-63e4-46c6-bd3d-82a89f7e1a4d",
+  "timestamp": "2026-05-26T14:30:00Z"
+}
+```
+
+Mapeamento principal:
+
+```text
+ValidationException          -> 400
+DomainException              -> 400
+BusinessRuleException        -> 400
+KeyNotFoundException         -> 404
+UnauthorizedAccessException  -> 401
+InvalidOperationException    -> 400
+OperationCanceledException   -> 499 quando cancelada pelo cliente
+TimeoutException             -> 408
+DbUpdateConcurrencyException -> 409
+DbUpdateException            -> 500 com mensagem segura
+Exception                    -> 500 com mensagem segura
+```
+
+`X-Correlation-Id` pode ser enviado pelo cliente. Se nao for enviado, a API gera um valor e devolve o mesmo header na resposta.
+
+O `CancellationToken` e propagado de controllers para MediatR, validators, handlers, repositories e EF Core. Cancelamento do cliente nao deve virar erro 500 generico.
+
+Logs nao devem registrar senha, JWT, header Authorization, connection string ou segredo.
 
 ## Commits da Implementacao
 
