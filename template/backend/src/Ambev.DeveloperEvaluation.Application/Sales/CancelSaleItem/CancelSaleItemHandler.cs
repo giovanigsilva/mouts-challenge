@@ -3,6 +3,7 @@ using Ambev.DeveloperEvaluation.Domain.Repositories;
 using AutoMapper;
 using FluentValidation;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace Ambev.DeveloperEvaluation.Application.Sales.CancelSaleItem;
 
@@ -10,11 +11,13 @@ public class CancelSaleItemHandler : IRequestHandler<CancelSaleItemCommand, Sale
 {
     private readonly ISaleRepository _saleRepository;
     private readonly IMapper _mapper;
+    private readonly ILogger<CancelSaleItemHandler> _logger;
 
-    public CancelSaleItemHandler(ISaleRepository saleRepository, IMapper mapper)
+    public CancelSaleItemHandler(ISaleRepository saleRepository, IMapper mapper, ILogger<CancelSaleItemHandler> logger)
     {
         _saleRepository = saleRepository;
         _mapper = mapper;
+        _logger = logger;
     }
 
     public async Task<SaleResult> Handle(CancelSaleItemCommand command, CancellationToken cancellationToken)
@@ -31,6 +34,8 @@ public class CancelSaleItemHandler : IRequestHandler<CancelSaleItemCommand, Sale
 
         sale.CancelItem(command.ItemId);
         var updatedSale = await _saleRepository.UpdateAsync(sale, cancellationToken);
+        var item = updatedSale.Items.First(current => current.Id == command.ItemId);
+        _logger.LogInformation("ItemCancelled SaleId={SaleId} SaleNumber={SaleNumber} ItemId={ItemId} ProductExternalId={ProductExternalId} TotalAmount={TotalAmount} OccurredAt={OccurredAt}", updatedSale.Id, updatedSale.SaleNumber, item.Id, item.ProductExternalId, updatedSale.TotalAmount, DateTime.UtcNow);
 
         return _mapper.Map<SaleResult>(updatedSale);
     }
