@@ -71,6 +71,7 @@ public class Program
                 options.OperationFilter<AuthorizeOperationFilter>();
                 options.OperationFilter<CorrelationIdHeaderOperationFilter>();
                 options.OperationFilter<DefaultErrorResponsesOperationFilter>();
+                options.OperationFilter<SalesExamplesOperationFilter>();
                 options.DocumentFilter<SwaggerTagDocumentFilter>();
             });
             builder.Services.AddCors(options =>
