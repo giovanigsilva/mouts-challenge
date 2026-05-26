@@ -1,4 +1,20 @@
 services:
+  frontend:
+    container_name: developerstore_frontend
+    image: ${DOCKER_REGISTRY-}developerstorefrontend
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
+        VITE_APP_NAME: ${VITE_APP_NAME:-DeveloperStore Frontend}
+        VITE_APP_ENV: ${VITE_APP_ENV:-development}
+    ports:
+      - "5173:80"
+    depends_on:
+      - ambev.developerevaluation.webapi
+    restart: unless-stopped
+
   ambev.developerevaluation.webapi:
     container_name: ambev_developer_evaluation_webapi
     image: ${DOCKER_REGISTRY-}ambevdeveloperevaluationwebapi

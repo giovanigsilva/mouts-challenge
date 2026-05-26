@@ -712,6 +712,13 @@ npm install
 npm run dev
 ```
 
+Rodar frontend via Docker Compose:
+
+```powershell
+cd C:\Users\Giovani\source\repos\mouts-challenge\template\backend
+docker compose up --build -d frontend
+```
+
 Abrir:
 
 ```text

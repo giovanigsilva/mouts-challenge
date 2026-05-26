@@ -57,6 +57,34 @@ Abra:
 http://localhost:5173
 ```
 
+## Rodar com Docker
+
+O compose fica no backend e tambem carrega o frontend:
+
+```powershell
+cd ..\backend
+docker compose up --build -d frontend
+```
+
+Ou subir tudo:
+
+```powershell
+cd ..\backend
+docker compose up --build -d
+```
+
+Frontend:
+
+```text
+http://localhost:5173
+```
+
+API usada pelo build Docker:
+
+```text
+http://localhost:8080
+```
+
 ## Comandos
 
 ```powershell
@@ -128,4 +156,4 @@ Camadas:
 
 - Nao existe token hardcoded.
 - Nao existe segredo no frontend.
-- O Docker do frontend nao foi adicionado nesta etapa; o fluxo local usa Vite em `localhost:5173`.
+- O Docker do frontend usa build estatico com nginx.
