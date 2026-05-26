@@ -2,6 +2,7 @@ using AutoMapper;
 using MediatR;
 using FluentValidation;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
+using Microsoft.Extensions.Logging;
 
 namespace Ambev.DeveloperEvaluation.Application.Users.GetUser;
 
@@ -12,6 +13,7 @@ public class GetUserHandler : IRequestHandler<GetUserCommand, GetUserResult>
 {
     private readonly IUserRepository _userRepository;
     private readonly IMapper _mapper;
+    private readonly ILogger<GetUserHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of GetUserHandler
@@ -21,10 +23,12 @@ public class GetUserHandler : IRequestHandler<GetUserCommand, GetUserResult>
     /// <param name="validator">The validator for GetUserCommand</param>
     public GetUserHandler(
         IUserRepository userRepository,
-        IMapper mapper)
+        IMapper mapper,
+        ILogger<GetUserHandler> logger)
     {
         _userRepository = userRepository;
         _mapper = mapper;
+        _logger = logger;
     }
 
     /// <summary>
@@ -43,8 +47,12 @@ public class GetUserHandler : IRequestHandler<GetUserCommand, GetUserResult>
 
         var user = await _userRepository.GetByIdAsync(request.Id, cancellationToken);
         if (user == null)
+        {
+            _logger.LogWarning("AuditEvent={AuditEventName} Action={Action} Result={Result} TargetEntityType={TargetEntityType} TargetEntityId={TargetEntityId} OccurredAtUtc={OccurredAtUtc}", "UserNotFound", "GetUser", "NotFound", "User", request.Id, DateTime.UtcNow);
             throw new KeyNotFoundException($"User with ID {request.Id} not found");
+        }
 
+        _logger.LogInformation("AuditEvent={AuditEventName} Action={Action} Result={Result} TargetEntityType={TargetEntityType} TargetEntityId={TargetEntityId} OccurredAtUtc={OccurredAtUtc}", "UserRetrieved", "GetUser", "Success", "User", user.Id, DateTime.UtcNow);
         return _mapper.Map<GetUserResult>(user);
     }
 }

@@ -1,16 +1,19 @@
 using Ambev.DeveloperEvaluation.Domain.Repositories;
 using FluentValidation;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace Ambev.DeveloperEvaluation.Application.Sales.DeleteSale;
 
 public class DeleteSaleHandler : IRequestHandler<DeleteSaleCommand, DeleteSaleResult>
 {
     private readonly ISaleRepository _saleRepository;
+    private readonly ILogger<DeleteSaleHandler> _logger;
 
-    public DeleteSaleHandler(ISaleRepository saleRepository)
+    public DeleteSaleHandler(ISaleRepository saleRepository, ILogger<DeleteSaleHandler> logger)
     {
         _saleRepository = saleRepository;
+        _logger = logger;
     }
 
     public async Task<DeleteSaleResult> Handle(DeleteSaleCommand command, CancellationToken cancellationToken)
@@ -23,8 +26,12 @@ public class DeleteSaleHandler : IRequestHandler<DeleteSaleCommand, DeleteSaleRe
 
         var deleted = await _saleRepository.DeleteAsync(command.Id, cancellationToken);
         if (!deleted)
+        {
+            _logger.LogWarning("AuditEvent={AuditEventName} Action={Action} Result={Result} TargetEntityType={TargetEntityType} TargetEntityId={TargetEntityId} OccurredAtUtc={OccurredAtUtc}", "SaleDeleteFailed", "DeleteSale", "NotFound", "Sale", command.Id, DateTime.UtcNow);
             throw new KeyNotFoundException($"Venda com ID {command.Id} nao encontrada.");
+        }
 
+        _logger.LogInformation("AuditEvent={AuditEventName} Action={Action} Result={Result} TargetEntityType={TargetEntityType} TargetEntityId={TargetEntityId} OccurredAtUtc={OccurredAtUtc}", "SaleDeleted", "DeleteSale", "Success", "Sale", command.Id, DateTime.UtcNow);
         return new DeleteSaleResult { Success = true };
     }
 }

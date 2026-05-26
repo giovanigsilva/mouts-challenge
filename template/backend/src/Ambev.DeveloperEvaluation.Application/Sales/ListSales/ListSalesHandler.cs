@@ -3,6 +3,7 @@ using Ambev.DeveloperEvaluation.Domain.Repositories;
 using AutoMapper;
 using FluentValidation;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace Ambev.DeveloperEvaluation.Application.Sales.ListSales;
 
@@ -10,11 +11,13 @@ public class ListSalesHandler : IRequestHandler<ListSalesQuery, PaginatedSalesRe
 {
     private readonly ISaleRepository _saleRepository;
     private readonly IMapper _mapper;
+    private readonly ILogger<ListSalesHandler> _logger;
 
-    public ListSalesHandler(ISaleRepository saleRepository, IMapper mapper)
+    public ListSalesHandler(ISaleRepository saleRepository, IMapper mapper, ILogger<ListSalesHandler> logger)
     {
         _saleRepository = saleRepository;
         _mapper = mapper;
+        _logger = logger;
     }
 
     public async Task<PaginatedSalesResult> Handle(ListSalesQuery query, CancellationToken cancellationToken)
@@ -26,6 +29,7 @@ public class ListSalesHandler : IRequestHandler<ListSalesQuery, PaginatedSalesRe
             throw new ValidationException(validationResult.Errors);
 
         var result = await _saleRepository.ListAsync(query.Page, query.PageSize, query.SaleNumber, query.CustomerId, query.BranchId, query.IsCancelled, query.FromDate, query.ToDate, cancellationToken);
+        _logger.LogInformation("AuditEvent={AuditEventName} Action={Action} Result={Result} TargetEntityType={TargetEntityType} Page={Page} PageSize={PageSize} TotalCount={TotalCount} SaleNumber={SaleNumber} CustomerId={CustomerId} BranchId={BranchId} OccurredAtUtc={OccurredAtUtc}", "SalesListed", "ListSales", "Success", "Sale", query.Page, query.PageSize, result.TotalCount, query.SaleNumber, query.CustomerId, query.BranchId, DateTime.UtcNow);
 
         return new PaginatedSalesResult
         {

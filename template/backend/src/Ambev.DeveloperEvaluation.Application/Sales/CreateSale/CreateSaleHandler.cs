@@ -23,6 +23,8 @@ public class CreateSaleHandler : IRequestHandler<CreateSaleCommand, SaleResult>
 
     public async Task<SaleResult> Handle(CreateSaleCommand command, CancellationToken cancellationToken)
     {
+        _logger.LogInformation("AuditEvent={AuditEventName} Action={Action} Result={Result} TargetEntityType={TargetEntityType} SaleNumber={SaleNumber} CustomerExternalId={CustomerExternalId} BranchExternalId={BranchExternalId} OccurredAtUtc={OccurredAtUtc}", "SaleCreateStarted", "CreateSale", "Started", "Sale", command.SaleNumber, command.CustomerExternalId, command.BranchExternalId, DateTime.UtcNow);
+
         var validator = new CreateSaleValidator();
         var validationResult = await validator.ValidateAsync(command, cancellationToken);
 
@@ -31,14 +33,17 @@ public class CreateSaleHandler : IRequestHandler<CreateSaleCommand, SaleResult>
 
         var existingSale = await _saleRepository.GetBySaleNumberAsync(command.SaleNumber, cancellationToken);
         if (existingSale is not null)
+        {
+            _logger.LogWarning("AuditEvent={AuditEventName} Action={Action} Result={Result} TargetEntityType={TargetEntityType} SaleNumber={SaleNumber} OccurredAtUtc={OccurredAtUtc}", "SaleCreateFailed", "CreateSale", "DuplicatedSaleNumber", "Sale", command.SaleNumber, DateTime.UtcNow);
             throw new InvalidOperationException($"Venda com numero {command.SaleNumber} ja existe.");
+        }
 
         var items = command.Items.Select(item => new SaleItem(item.ProductExternalId, item.ProductName, item.Quantity, item.UnitPrice));
         var sale = new Sale(command.SaleNumber, command.SaleDate, command.CustomerExternalId, command.CustomerName, command.BranchExternalId, command.BranchName, items);
         var createdSale = await _saleRepository.CreateAsync(sale, cancellationToken);
         try
         {
-            _logger.LogInformation("SaleCreated SaleId={SaleId} SaleNumber={SaleNumber} CustomerExternalId={CustomerExternalId} BranchExternalId={BranchExternalId} TotalAmount={TotalAmount} OccurredAt={OccurredAt}", createdSale.Id, createdSale.SaleNumber, createdSale.CustomerExternalId, createdSale.BranchExternalId, createdSale.TotalAmount, DateTime.UtcNow);
+            _logger.LogInformation("AuditEvent={AuditEventName} Action={Action} Result={Result} TargetEntityType={TargetEntityType} TargetEntityId={TargetEntityId} SaleId={SaleId} SaleNumber={SaleNumber} CustomerExternalId={CustomerExternalId} BranchExternalId={BranchExternalId} TotalAmount={TotalAmount} OccurredAtUtc={OccurredAtUtc}", "SaleCreated", "CreateSale", "Success", "Sale", createdSale.Id, createdSale.Id, createdSale.SaleNumber, createdSale.CustomerExternalId, createdSale.BranchExternalId, createdSale.TotalAmount, DateTime.UtcNow);
         }
         catch (Exception logException)
         {

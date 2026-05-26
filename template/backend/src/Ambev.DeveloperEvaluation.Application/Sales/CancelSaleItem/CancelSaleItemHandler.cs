@@ -30,14 +30,17 @@ public class CancelSaleItemHandler : IRequestHandler<CancelSaleItemCommand, Sale
 
         var sale = await _saleRepository.GetByIdAsync(command.SaleId, cancellationToken);
         if (sale is null)
+        {
+            _logger.LogWarning("AuditEvent={AuditEventName} Action={Action} Result={Result} TargetEntityType={TargetEntityType} TargetEntityId={TargetEntityId} ItemId={ItemId} OccurredAtUtc={OccurredAtUtc}", "SaleItemCancelFailed", "CancelSaleItem", "SaleNotFound", "Sale", command.SaleId, command.ItemId, DateTime.UtcNow);
             throw new KeyNotFoundException($"Venda com ID {command.SaleId} nao encontrada.");
+        }
 
         sale.CancelItem(command.ItemId);
         var updatedSale = await _saleRepository.UpdateAsync(sale, cancellationToken);
         var item = updatedSale.Items.First(current => current.Id == command.ItemId);
         try
         {
-            _logger.LogInformation("ItemCancelled SaleId={SaleId} SaleNumber={SaleNumber} ItemId={ItemId} ProductExternalId={ProductExternalId} TotalAmount={TotalAmount} OccurredAt={OccurredAt}", updatedSale.Id, updatedSale.SaleNumber, item.Id, item.ProductExternalId, updatedSale.TotalAmount, DateTime.UtcNow);
+            _logger.LogInformation("AuditEvent={AuditEventName} Action={Action} Result={Result} TargetEntityType={TargetEntityType} TargetEntityId={TargetEntityId} SaleId={SaleId} SaleNumber={SaleNumber} ItemId={ItemId} ProductExternalId={ProductExternalId} TotalAmount={TotalAmount} OccurredAtUtc={OccurredAtUtc}", "SaleItemCancelled", "CancelSaleItem", "Success", "SaleItem", item.Id, updatedSale.Id, updatedSale.SaleNumber, item.Id, item.ProductExternalId, updatedSale.TotalAmount, DateTime.UtcNow);
         }
         catch (Exception logException)
         {

@@ -4,6 +4,7 @@ using FluentValidation;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
 using Ambev.DeveloperEvaluation.Domain.Entities;
 using Ambev.DeveloperEvaluation.Common.Security;
+using Microsoft.Extensions.Logging;
 
 namespace Ambev.DeveloperEvaluation.Application.Users.CreateUser;
 
@@ -15,6 +16,7 @@ public class CreateUserHandler : IRequestHandler<CreateUserCommand, CreateUserRe
     private readonly IUserRepository _userRepository;
     private readonly IMapper _mapper;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly ILogger<CreateUserHandler> _logger;
 
     /// <summary>
     /// Initializes a new instance of CreateUserHandler
@@ -22,11 +24,12 @@ public class CreateUserHandler : IRequestHandler<CreateUserCommand, CreateUserRe
     /// <param name="userRepository">The user repository</param>
     /// <param name="mapper">The AutoMapper instance</param>
     /// <param name="validator">The validator for CreateUserCommand</param>
-    public CreateUserHandler(IUserRepository userRepository, IMapper mapper, IPasswordHasher passwordHasher)
+    public CreateUserHandler(IUserRepository userRepository, IMapper mapper, IPasswordHasher passwordHasher, ILogger<CreateUserHandler> logger)
     {
         _userRepository = userRepository;
         _mapper = mapper;
         _passwordHasher = passwordHasher;
+        _logger = logger;
     }
 
     /// <summary>
@@ -45,12 +48,16 @@ public class CreateUserHandler : IRequestHandler<CreateUserCommand, CreateUserRe
 
         var existingUser = await _userRepository.GetByEmailAsync(command.Email, cancellationToken);
         if (existingUser != null)
+        {
+            _logger.LogWarning("AuditEvent={AuditEventName} Action={Action} Result={Result} TargetEntityType={TargetEntityType} ActorUserEmail={ActorUserEmail} OccurredAtUtc={OccurredAtUtc}", "UserCreateFailed", "CreateUser", "DuplicatedEmail", "User", command.Email, DateTime.UtcNow);
             throw new InvalidOperationException($"User with email {command.Email} already exists");
+        }
 
         var user = _mapper.Map<User>(command);
         user.Password = _passwordHasher.HashPassword(command.Password);
 
         var createdUser = await _userRepository.CreateAsync(user, cancellationToken);
+        _logger.LogInformation("AuditEvent={AuditEventName} Action={Action} Result={Result} TargetEntityType={TargetEntityType} TargetEntityId={TargetEntityId} ActorUserName={ActorUserName} ActorUserEmail={ActorUserEmail} OccurredAtUtc={OccurredAtUtc}", "UserCreated", "CreateUser", "Success", "User", createdUser.Id, createdUser.Username, createdUser.Email, DateTime.UtcNow);
         var result = _mapper.Map<CreateUserResult>(createdUser);
         return result;
     }
