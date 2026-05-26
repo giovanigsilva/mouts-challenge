@@ -1,12 +1,14 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 
-import { BootstrapPage } from '@/app/BootstrapPage'
 import { ProtectedLayout } from '@/shared/components/layout/ProtectedLayout'
 import { LoginPage } from '@/features/auth/pages/LoginPage'
+import { DashboardPage } from '@/features/dashboard/pages/DashboardPage'
+import { HealthPage } from '@/features/health/pages/HealthPage'
 import { SaleCreatePage } from '@/features/sales/pages/SaleCreatePage'
 import { SaleDetailsPage } from '@/features/sales/pages/SaleDetailsPage'
 import { SaleEditPage } from '@/features/sales/pages/SaleEditPage'
 import { SalesListPage } from '@/features/sales/pages/SalesListPage'
+import { CreateUserPage } from '@/features/users/pages/CreateUserPage'
 
 export const router = createBrowserRouter([
   {
@@ -22,7 +24,7 @@ export const router = createBrowserRouter([
     children: [
       {
         path: '/dashboard',
-        element: <BootstrapPage />,
+        element: <DashboardPage />,
       },
       {
         path: '/sales',
@@ -42,11 +44,11 @@ export const router = createBrowserRouter([
       },
       {
         path: '/users/new',
-        element: <BootstrapPage />,
+        element: <CreateUserPage />,
       },
       {
         path: '/health',
-        element: <BootstrapPage />,
+        element: <HealthPage />,
       },
     ],
   },
