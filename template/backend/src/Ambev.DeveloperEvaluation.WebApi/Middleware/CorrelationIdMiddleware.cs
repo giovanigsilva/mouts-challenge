@@ -1,5 +1,7 @@
 namespace Ambev.DeveloperEvaluation.WebApi.Middleware;
 
+using Serilog.Context;
+
 public sealed class CorrelationIdMiddleware
 {
     public const string HeaderName = "X-Correlation-Id";
@@ -26,6 +28,7 @@ public sealed class CorrelationIdMiddleware
             return Task.CompletedTask;
         });
 
+        using (LogContext.PushProperty("CorrelationId", correlationId))
         using (_logger.BeginScope(new Dictionary<string, object> { ["CorrelationId"] = correlationId }))
             await _next(context);
     }

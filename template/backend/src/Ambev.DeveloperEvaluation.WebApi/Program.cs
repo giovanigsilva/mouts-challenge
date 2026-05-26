@@ -118,6 +118,7 @@ public class Program
 
             var app = builder.Build();
             app.UseMiddleware<CorrelationIdMiddleware>();
+            app.UseMiddleware<RequestContextLoggingMiddleware>();
             app.UseMiddleware<GlobalExceptionMiddleware>();
 
             if (builder.Configuration.GetValue<bool>("Swagger:Enabled"))
