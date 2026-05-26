@@ -17,6 +17,7 @@ Este README foi escrito para o avaliador clonar o repositorio e inicializar a AP
 - [Composicao de dependencias](#composicao-de-dependencias)
 - [Ambientes](#ambientes)
 - [Segredos e Vault local](#segredos-e-vault-local)
+- [reCAPTCHA v3 simulado](#recaptcha-v3-simulado)
 - [Observabilidade](#observabilidade)
 - [Stack enterprise local](#stack-enterprise-local)
 - [Testes de carga com k6](#testes-de-carga-com-k6)
@@ -49,6 +50,7 @@ Este README foi escrito para o avaliador clonar o repositorio e inicializar a AP
 - k6 opcional no profile loadtest.
 - IoC centralizado em `src/Ambev.DeveloperEvaluation.IoC/ModuleInitializers`.
 - Separacao de ambientes: `Development`, `Uat` e `Production`.
+- reCAPTCHA v3 simulado para login e criacao de usuario, desabilitado por padrao em Development.
 
 Fora do escopo desta prova: Azure Service Bus real, Azure Functions reais, Azure Key Vault real e blue-green real.
 
@@ -547,6 +549,53 @@ Estes valores sao somente para prova de conceito local.
 
 ## Observabilidade
 
+## reCAPTCHA v3 simulado
+
+A prova inclui protecao anti-bot em modo simulado, sem Google real, sem chave real, sem internet e sem servico externo.
+
+Endpoints protegidos quando `Recaptcha__Enabled=true`:
+
+- `POST /api/Auth`
+- `POST /api/Users`
+
+Por padrao em Development a protecao fica desabilitada para facilitar a avaliacao:
+
+```powershell
+$env:RECAPTCHA_ENABLED="false"
+$env:VITE_RECAPTCHA_ENABLED="false"
+docker compose up --build -d
+```
+
+Para demonstrar a protecao simulada no Docker:
+
+```powershell
+$env:RECAPTCHA_ENABLED="true"
+$env:VITE_RECAPTCHA_ENABLED="true"
+docker compose up --build -d ambev.developerevaluation.webapi frontend
+```
+
+Formato do token simulado:
+
+```text
+simulated:{action}:{unixTimestampSeconds}:{nonce}
+```
+
+Actions usadas:
+
+- Login: `login`
+- Criacao de usuario: `create_user`
+
+O frontend gera o token apenas no submit e nao salva em `localStorage`. O backend valida prefixo, action, expiracao e score simulado. Para simular falha:
+
+```powershell
+$env:RECAPTCHA_ENABLED="true"
+$env:Recaptcha__Simulated__ForceFailure="true"
+$env:VITE_RECAPTCHA_ENABLED="true"
+docker compose up --build -d ambev.developerevaluation.webapi frontend
+```
+
+Documentacao detalhada: [reCAPTCHA simulado](docs/security-recaptcha.md).
+
 Seq:
 
 ```text
@@ -731,6 +780,10 @@ Variaveis do frontend:
 VITE_API_BASE_URL=http://localhost:8080
 VITE_APP_NAME=DeveloperStore Frontend
 VITE_APP_ENV=development
+VITE_RECAPTCHA_ENABLED=false
+VITE_RECAPTCHA_PROVIDER=simulated
+VITE_RECAPTCHA_LOGIN_ACTION=login
+VITE_RECAPTCHA_CREATE_USER_ACTION=create_user
 ```
 
 Comandos:
@@ -791,6 +844,7 @@ scripts
 - [Ambientes](docs/environments.md)
 - [Swagger](docs/swagger.md)
 - [Seguranca](docs/security.md)
+- [reCAPTCHA simulado](docs/security-recaptcha.md)
 - [Segredos](docs/secrets.md)
 - [Observabilidade](docs/observability.md)
 - [Observabilidade local](docs/observability-local.md)

@@ -32,6 +32,10 @@ Conteudo esperado:
 VITE_API_BASE_URL=http://localhost:8080
 VITE_APP_NAME=DeveloperStore Frontend
 VITE_APP_ENV=development
+VITE_RECAPTCHA_ENABLED=false
+VITE_RECAPTCHA_PROVIDER=simulated
+VITE_RECAPTCHA_LOGIN_ACTION=login
+VITE_RECAPTCHA_CREATE_USER_ACTION=create_user
 ```
 
 ## Rodar localmente
@@ -151,6 +155,28 @@ Camadas:
 - O client envia `Authorization: Bearer {token}` automaticamente.
 - O client envia `X-Correlation-Id` automaticamente.
 - Resposta 401 limpa o token e redireciona para `/login`.
+
+## reCAPTCHA v3 simulado
+
+O frontend possui provider simulado para proteger login e criacao de usuario sem Google real.
+
+Para habilitar:
+
+```powershell
+$env:VITE_RECAPTCHA_ENABLED="true"
+npm run dev
+```
+
+No Docker, defina tambem no backend:
+
+```powershell
+$env:RECAPTCHA_ENABLED="true"
+$env:VITE_RECAPTCHA_ENABLED="true"
+cd ..\backend
+docker compose up --build -d ambev.developerevaluation.webapi frontend
+```
+
+O token e gerado no submit no formato `simulated:{action}:{timestamp}:{nonce}` e descartado apos o envio.
 
 ## Observacoes
 

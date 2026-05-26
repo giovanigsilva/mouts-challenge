@@ -9,6 +9,10 @@ services:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
         VITE_APP_NAME: ${VITE_APP_NAME:-DeveloperStore Frontend}
         VITE_APP_ENV: ${VITE_APP_ENV:-development}
+        VITE_RECAPTCHA_ENABLED: ${VITE_RECAPTCHA_ENABLED:-false}
+        VITE_RECAPTCHA_PROVIDER: ${VITE_RECAPTCHA_PROVIDER:-simulated}
+        VITE_RECAPTCHA_LOGIN_ACTION: ${VITE_RECAPTCHA_LOGIN_ACTION:-login}
+        VITE_RECAPTCHA_CREATE_USER_ACTION: ${VITE_RECAPTCHA_CREATE_USER_ACTION:-create_user}
     ports:
       - "5173:80"
     depends_on:
