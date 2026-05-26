@@ -6,6 +6,8 @@ using Ambev.DeveloperEvaluation.Common.Security;
 using Ambev.DeveloperEvaluation.Common.Validation;
 using Ambev.DeveloperEvaluation.IoC;
 using Ambev.DeveloperEvaluation.ORM;
+using Ambev.DeveloperEvaluation.Application.Common.Caching;
+using Ambev.DeveloperEvaluation.WebApi.Caching;
 using Ambev.DeveloperEvaluation.WebApi.HealthChecks;
 using Ambev.DeveloperEvaluation.WebApi.Swagger;
 using MediatR;
@@ -32,6 +34,7 @@ public static class WebApiServiceExtensions
         builder.Services.AddDeveloperStoreCors(builder.Configuration);
         builder.Services.AddDeveloperStoreRateLimiting(builder.Configuration);
         builder.Services.AddDeveloperStoreDatabase(builder.Configuration);
+        builder.Services.AddDeveloperStoreCache(builder.Configuration);
         builder.Services.AddJwtAuthentication(builder.Configuration);
         builder.Services.AddDeveloperStoreAuthorization();
         builder.RegisterDependencies();
@@ -65,6 +68,28 @@ public static class WebApiServiceExtensions
                 b => b.MigrationsAssembly("Ambev.DeveloperEvaluation.ORM")
             )
         );
+
+        return services;
+    }
+
+    private static IServiceCollection AddDeveloperStoreCache(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<CacheOptions>(configuration.GetSection("Cache"));
+
+        if (configuration.GetValue<bool>("Cache:Enabled"))
+        {
+            services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = configuration.GetConnectionString("Redis");
+                options.InstanceName = "developerstore:";
+            });
+
+            services.AddScoped<ICacheService, DistributedCacheService>();
+        }
+        else
+        {
+            services.AddScoped<ICacheService, NoOpCacheService>();
+        }
 
         return services;
     }
