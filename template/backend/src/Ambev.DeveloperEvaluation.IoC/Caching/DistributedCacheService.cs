@@ -1,11 +1,12 @@
 using System.Text.Json;
 using Ambev.DeveloperEvaluation.Application.Common.Caching;
 using Ambev.DeveloperEvaluation.Application.Common.Metrics;
-using Ambev.DeveloperEvaluation.WebApi.Configuration;
+using Ambev.DeveloperEvaluation.IoC.Options;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Ambev.DeveloperEvaluation.WebApi.Caching;
+namespace Ambev.DeveloperEvaluation.IoC.Caching;
 
 public sealed class DistributedCacheService : ICacheService
 {

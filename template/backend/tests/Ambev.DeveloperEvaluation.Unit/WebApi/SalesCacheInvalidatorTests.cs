@@ -1,5 +1,5 @@
 using Ambev.DeveloperEvaluation.Application.Common.Caching;
-using Ambev.DeveloperEvaluation.WebApi.Caching;
+using Ambev.DeveloperEvaluation.IoC.Caching;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Xunit;

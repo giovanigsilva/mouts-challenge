@@ -1,4 +1,4 @@
-using Ambev.DeveloperEvaluation.WebApi.Caching;
+using Ambev.DeveloperEvaluation.IoC.Caching;
 using FluentAssertions;
 using Xunit;
 

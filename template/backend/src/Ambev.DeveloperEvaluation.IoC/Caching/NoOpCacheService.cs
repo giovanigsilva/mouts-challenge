@@ -1,6 +1,6 @@
 using Ambev.DeveloperEvaluation.Application.Common.Caching;
 
-namespace Ambev.DeveloperEvaluation.WebApi.Caching;
+namespace Ambev.DeveloperEvaluation.IoC.Caching;
 
 public sealed class NoOpCacheService : ICacheService
 {

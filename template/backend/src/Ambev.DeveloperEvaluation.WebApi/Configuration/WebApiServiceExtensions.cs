@@ -1,22 +1,11 @@
-using Ambev.DeveloperEvaluation.Application;
-using Ambev.DeveloperEvaluation.Application.Common.Behaviors;
 using Ambev.DeveloperEvaluation.Common.HealthChecks;
 using Ambev.DeveloperEvaluation.Common.Logging;
 using Ambev.DeveloperEvaluation.Common.Security;
 using Ambev.DeveloperEvaluation.Common.Validation;
 using Ambev.DeveloperEvaluation.IoC;
-using Ambev.DeveloperEvaluation.ORM;
-using Ambev.DeveloperEvaluation.Application.Common.Caching;
-using Ambev.DeveloperEvaluation.Application.Common.Metrics;
-using Ambev.DeveloperEvaluation.WebApi.Caching;
 using Ambev.DeveloperEvaluation.WebApi.HealthChecks;
-using Ambev.DeveloperEvaluation.WebApi.Observability;
 using Ambev.DeveloperEvaluation.WebApi.Swagger;
-using MediatR;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.EntityFrameworkCore;
-using OpenTelemetry.Metrics;
-using OpenTelemetry.Resources;
 using System.Threading.RateLimiting;
 
 namespace Ambev.DeveloperEvaluation.WebApi.Configuration;
@@ -37,13 +26,11 @@ public static class WebApiServiceExtensions
         builder.Services.AddDeveloperStoreSwagger(builder.Configuration);
         builder.Services.AddDeveloperStoreCors(builder.Configuration);
         builder.Services.AddDeveloperStoreRateLimiting(builder.Configuration);
-        builder.Services.AddDeveloperStoreDatabase(builder.Configuration);
-        builder.Services.AddDeveloperStoreCache(builder.Configuration);
-        builder.Services.AddDeveloperStoreMetrics(builder.Configuration);
         builder.Services.AddJwtAuthentication(builder.Configuration);
         builder.Services.AddDeveloperStoreAuthorization();
         builder.RegisterDependencies();
-        builder.Services.AddDeveloperStoreApplication();
+        builder.Services.AddAutoMapper(_ => { }, typeof(Program).Assembly);
+        builder.Services.AddValidatorsFromAssemblies(typeof(Program).Assembly);
 
         return builder;
     }
@@ -61,73 +48,6 @@ public static class WebApiServiceExtensions
                     policy.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod();
             });
         });
-
-        return services;
-    }
-
-    private static IServiceCollection AddDeveloperStoreDatabase(this IServiceCollection services, IConfiguration configuration)
-    {
-        services.AddDbContext<DefaultContext>(options =>
-            options.UseNpgsql(
-                configuration.GetConnectionString("DefaultConnection"),
-                b => b.MigrationsAssembly("Ambev.DeveloperEvaluation.ORM")
-            )
-        );
-
-        return services;
-    }
-
-    private static IServiceCollection AddDeveloperStoreCache(this IServiceCollection services, IConfiguration configuration)
-    {
-        services.Configure<CacheOptions>(configuration.GetSection("Cache"));
-
-        if (configuration.GetValue<bool>("Cache:Enabled"))
-        {
-            services.AddStackExchangeRedisCache(options =>
-            {
-                options.Configuration = configuration.GetConnectionString("Redis");
-                options.InstanceName = "developerstore:";
-            });
-
-            services.AddScoped<ICacheService, DistributedCacheService>();
-        }
-        else
-        {
-            services.AddScoped<ICacheService, NoOpCacheService>();
-        }
-
-        services.AddScoped<ISalesCacheInvalidator, SalesCacheInvalidator>();
-
-        return services;
-    }
-
-    private static IServiceCollection AddDeveloperStoreMetrics(this IServiceCollection services, IConfiguration configuration)
-    {
-        services.Configure<MetricsOptions>(configuration.GetSection("Metrics"));
-
-        if (!configuration.GetValue<bool>("Metrics:Enabled"))
-        {
-            services.AddSingleton<IApplicationMetrics, NoOpApplicationMetrics>();
-            return services;
-        }
-
-        var serviceName = configuration["OpenTelemetry:ServiceName"] ?? "developerstore-sales-api";
-        var serviceVersion = configuration["OpenTelemetry:ServiceVersion"] ?? "1.0.0";
-
-        services.AddSingleton<IApplicationMetrics, DeveloperStoreMetrics>();
-        services.AddOpenTelemetry()
-            .ConfigureResource(resource => resource.AddService(serviceName, serviceVersion: serviceVersion))
-            .WithMetrics(metrics =>
-            {
-                metrics
-                    .AddMeter(DeveloperStoreMetrics.MeterName)
-                    .AddAspNetCoreInstrumentation()
-                    .AddHttpClientInstrumentation()
-                    .AddRuntimeInstrumentation();
-
-                if (configuration.GetValue<bool>("Metrics:EnablePrometheusEndpoint"))
-                    metrics.AddPrometheusExporter();
-            });
 
         return services;
     }
@@ -193,24 +113,6 @@ public static class WebApiServiceExtensions
             options.AddPolicy("Sales.Cancel", policy => policy.RequireAuthenticatedUser());
             options.AddPolicy("Sales.Delete", policy => policy.RequireAuthenticatedUser());
         });
-
-        return services;
-    }
-
-    private static IServiceCollection AddDeveloperStoreApplication(this IServiceCollection services)
-    {
-        services.AddAutoMapper(_ => { }, typeof(Program).Assembly, typeof(ApplicationLayer).Assembly);
-        services.AddValidatorsFromAssemblies(typeof(ApplicationLayer).Assembly, typeof(Program).Assembly);
-        services.AddMediatR(cfg =>
-        {
-            cfg.RegisterServicesFromAssemblies(
-                typeof(ApplicationLayer).Assembly,
-                typeof(Program).Assembly
-            );
-        });
-        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(RequestLoggingBehavior<,>));
-        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(RequestExceptionLoggingBehavior<,>));
-        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
         return services;
     }

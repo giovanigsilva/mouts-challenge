@@ -1,4 +1,4 @@
-namespace Ambev.DeveloperEvaluation.WebApi.Configuration;
+namespace Ambev.DeveloperEvaluation.IoC.Options;
 
 public sealed class MetricsOptions
 {

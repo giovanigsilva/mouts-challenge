@@ -1,6 +1,7 @@
 using Ambev.DeveloperEvaluation.Application.Common.Caching;
+using Microsoft.Extensions.Logging;
 
-namespace Ambev.DeveloperEvaluation.WebApi.Caching;
+namespace Ambev.DeveloperEvaluation.IoC.Caching;
 
 public sealed class SalesCacheInvalidator : ISalesCacheInvalidator
 {

@@ -9,6 +9,5 @@ public static class DependencyResolver
     {
         new ApplicationModuleInitializer().Initialize(builder);
         new InfrastructureModuleInitializer().Initialize(builder);
-        new WebApiModuleInitializer().Initialize(builder);
     }
 }

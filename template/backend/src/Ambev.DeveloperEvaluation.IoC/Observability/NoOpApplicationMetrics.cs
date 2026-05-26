@@ -1,6 +1,6 @@
 using Ambev.DeveloperEvaluation.Application.Common.Metrics;
 
-namespace Ambev.DeveloperEvaluation.WebApi.Observability;
+namespace Ambev.DeveloperEvaluation.IoC.Observability;
 
 public sealed class NoOpApplicationMetrics : IApplicationMetrics
 {
