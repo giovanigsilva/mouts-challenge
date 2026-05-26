@@ -20,6 +20,7 @@ Este README foi escrito para o avaliador clonar o repositorio e inicializar a AP
 - [Observabilidade](#observabilidade)
 - [Stack enterprise local](#stack-enterprise-local)
 - [Testes de carga com k6](#testes-de-carga-com-k6)
+- [Frontend React](#frontend-react)
 - [Troubleshooting](#troubleshooting)
 
 ## O que esta implementado
@@ -675,6 +676,86 @@ Variaveis:
 - `K6_TOKEN`: token JWT para endpoints protegidos.
 - `K6_SALE_ID`: id de venda para teste de detalhe.
 
+## Frontend React
+
+O projeto frontend fica em:
+
+```text
+template/frontend
+```
+
+Stack usada:
+
+- React, TypeScript e Vite.
+- React Router para rotas publicas e protegidas.
+- TanStack Query para server state, cache e invalidacao de Sales.
+- React Hook Form + Zod para formularios e validacoes em PT-BR.
+- Tailwind CSS com componentes no estilo shadcn/ui.
+- Motion for React para transicoes suaves.
+- Axios com client tipado, JWT Bearer e `X-Correlation-Id`.
+- Sonner para notificacoes.
+- Lucide React para icones.
+
+Rodar backend:
+
+```powershell
+cd C:\Users\Giovani\source\repos\mouts-challenge\template\backend
+docker compose up --build -d
+```
+
+Rodar frontend:
+
+```powershell
+cd C:\Users\Giovani\source\repos\mouts-challenge\template\frontend
+Copy-Item .env.example .env
+npm install
+npm run dev
+```
+
+Abrir:
+
+```text
+http://localhost:5173
+```
+
+Variaveis do frontend:
+
+```text
+VITE_API_BASE_URL=http://localhost:8080
+VITE_APP_NAME=DeveloperStore Frontend
+VITE_APP_ENV=development
+```
+
+Comandos:
+
+```powershell
+npm run lint
+npm run build
+npm run preview
+```
+
+Telas implementadas:
+
+- `/login`: autenticacao via `POST /api/Auth`.
+- `/dashboard`: indicadores calculados sobre a pagina de vendas carregada e status da API.
+- `/sales`: listagem, filtros e paginacao.
+- `/sales/new`: criacao de venda.
+- `/sales/{id}`: detalhes, cancelamento de venda, cancelamento de item e remocao.
+- `/sales/{id}/edit`: edicao de venda ativa.
+- `/users/new`: criacao de usuario.
+- `/health`: consulta `/health/live`, `/health/ready`, `/health/logging`, `/health/cache` e `/health/metrics`.
+
+Fluxo de avaliacao:
+
+1. Suba o backend com Docker.
+2. Rode o frontend em `http://localhost:5173`.
+3. Crie usuario pelo Swagger ou pela tela de usuario quando autenticado.
+4. Autentique em `/login`.
+5. Crie, liste, filtre, edite, detalhe, cancele item, cancele venda e remova venda.
+6. Consulte dashboard e health page.
+
+O backend ja permite CORS para `http://localhost:5173` em Development.
+
 ## Estrutura principal
 
 ```text
@@ -685,6 +766,8 @@ src/Ambev.DeveloperEvaluation.ORM
 src/Ambev.DeveloperEvaluation.Common
 src/Ambev.DeveloperEvaluation.IoC
 src/Ambev.DeveloperEvaluation.IoC/ModuleInitializers
+../frontend
+../frontend/src/features
 tests/Ambev.DeveloperEvaluation.Unit
 tests/Ambev.DeveloperEvaluation.Functional
 tests/Ambev.DeveloperEvaluation.Integration
