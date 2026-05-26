@@ -1,6 +1,6 @@
 # DeveloperStore Sales API
 
-API do desafio DeveloperStore implementada em .NET 8 com Clean Architecture, DDD, CQRS com MediatR, Entity Framework Core, PostgreSQL, FluentValidation, JWT Bearer, Serilog, Swagger/OpenAPI em portugues, Docker, Seq, Datadog Agent e HashiCorp Vault local para segredos de Development.
+API do desafio DeveloperStore implementada em .NET 8 com Clean Architecture, DDD, CQRS com MediatR, Entity Framework Core, PostgreSQL, FluentValidation, JWT Bearer, Serilog, Swagger/OpenAPI em portugues, Docker, Seq, Datadog Agent, HashiCorp Vault local para segredos de Development, Redis opcional, OpenTelemetry, Prometheus, Grafana e k6.
 
 Este README foi escrito para o avaliador clonar o repositorio e inicializar a API do zero.
 
@@ -14,6 +14,7 @@ Este README foi escrito para o avaliador clonar o repositorio e inicializar a AP
 - [Fluxo de teste por curl](#fluxo-de-teste-por-curl)
 - [Rodar sem container para a API](#rodar-sem-container-para-a-api)
 - [Testes](#testes)
+- [Composicao de dependencias](#composicao-de-dependencias)
 - [Ambientes](#ambientes)
 - [Segredos e Vault local](#segredos-e-vault-local)
 - [Observabilidade](#observabilidade)
@@ -32,7 +33,9 @@ Este README foi escrito para o avaliador clonar o repositorio e inicializar a AP
 - External Identities com snapshot denormalizado para cliente, filial e produto.
 - Eventos de venda registrados em log: `SaleCreated`, `SaleModified`, `SaleCancelled`, `ItemCancelled`.
 - PostgreSQL com EF Core migrations no projeto `Ambev.DeveloperEvaluation.ORM`.
-- Health checks: `/health/live`, `/health/ready`, `/health/logging`.
+- Migrations automaticas no startup da API.
+- Health checks: `/health/live`, `/health/ready`, `/health/logging`, `/health/cache`, `/health/metrics`.
+- Endpoint Prometheus: `/metrics`.
 - Swagger em portugues.
 - FluentValidation em requests, commands e queries.
 - CorrelationId via header `X-Correlation-Id`.
@@ -43,6 +46,7 @@ Este README foi escrito para o avaliador clonar o repositorio e inicializar a AP
 - Redis opcional para cache de leitura no profile enterprise.
 - Prometheus, Grafana, postgres-exporter e redis-exporter opcionais no profile enterprise.
 - k6 opcional no profile loadtest.
+- IoC centralizado em `src/Ambev.DeveloperEvaluation.IoC/ModuleInitializers`.
 - Separacao de ambientes: `Development`, `Uat` e `Production`.
 
 Fora do escopo desta prova: Azure Service Bus real, Azure Functions reais, Azure Key Vault real e blue-green real.
@@ -205,6 +209,8 @@ Com a API no Docker:
 curl.exe -i http://localhost:8080/health/live
 curl.exe -i http://localhost:8080/health/ready
 curl.exe -i http://localhost:8080/health/logging
+curl.exe -i http://localhost:8080/health/cache
+curl.exe -i http://localhost:8080/health/metrics
 ```
 
 Resultado esperado:
@@ -212,6 +218,14 @@ Resultado esperado:
 - `/health/live`: `200 OK`, processo vivo.
 - `/health/ready`: `200 OK`, API pronta e PostgreSQL/configuracoes essenciais OK.
 - `/health/logging`: `200 OK`, configuracao de logs sem expor segredo.
+- `/health/cache`: `200 OK`, status seguro do cache. Com `Cache:Enabled=false`, informa cache desabilitado.
+- `/health/metrics`: `200 OK`, status seguro das metricas.
+
+Metricas Prometheus:
+
+```powershell
+curl.exe -i http://localhost:8080/metrics
+```
 
 ## Swagger
 
@@ -372,7 +386,7 @@ $env:VAULT_TOKEN="dev-root-token"
 .\scripts\vault-init-dev.ps1
 ```
 
-Aplique migrations:
+Opcionalmente, aplique migrations manualmente para diagnostico. A API tambem aplica migrations pendentes no startup:
 
 ```powershell
 $env:ASPNETCORE_ENVIRONMENT="Development"
@@ -405,7 +419,28 @@ dotnet test .\Ambev.DeveloperEvaluation.sln --configuration Release --no-build
 Estado atual do projeto:
 
 - `tests/Ambev.DeveloperEvaluation.Unit` contem testes unitarios.
+- A validacao recente da branch `develop` executou 101 testes unitarios com sucesso.
 - `tests/Ambev.DeveloperEvaluation.Functional` e `tests/Ambev.DeveloperEvaluation.Integration` existem na solution, mas podem aparecer sem testes descobertos.
+
+## Composicao de dependencias
+
+A composicao da aplicacao fica centralizada no projeto `src/Ambev.DeveloperEvaluation.IoC`.
+
+Arquivos principais:
+
+```text
+src/Ambev.DeveloperEvaluation.IoC/DependencyResolver.cs
+src/Ambev.DeveloperEvaluation.IoC/ModuleInitializers/ApplicationModuleInitializer.cs
+src/Ambev.DeveloperEvaluation.IoC/ModuleInitializers/InfrastructureModuleInitializer.cs
+```
+
+Responsabilidades atuais:
+
+- `ApplicationModuleInitializer`: registra MediatR, AutoMapper, FluentValidation, pipeline behaviors e servicos de aplicacao.
+- `InfrastructureModuleInitializer`: registra `DefaultContext`, repositories, cache, invalidacao de cache, metricas e OpenTelemetry.
+- `WebApiServiceExtensions`: mantem configuracoes HTTP da WebApi, como controllers, endpoints, Swagger, CORS, rate limiting, JWT, authorization, health checks e middlewares.
+
+O `Program.cs` permanece limpo e restrito ao bootstrap: carregar configuracoes, montar a aplicacao, aplicar migrations pendentes e iniciar o host.
 
 ## Ambientes
 
@@ -551,6 +586,8 @@ O modo simples continua funcionando com:
 docker compose up --build -d
 ```
 
+No modo simples, tambem existe container do Datadog Agent no compose. Ele nao e obrigatorio para a API funcionar; sem `DD_API_KEY` real, os logs continuam disponiveis no console e no Seq.
+
 O modo enterprise local adiciona Redis, Prometheus, Grafana, postgres-exporter e redis-exporter. Para ativar cache Redis na API, defina `CACHE_ENABLED=true` antes de subir a stack:
 
 ```powershell
@@ -647,9 +684,13 @@ src/Ambev.DeveloperEvaluation.Domain
 src/Ambev.DeveloperEvaluation.ORM
 src/Ambev.DeveloperEvaluation.Common
 src/Ambev.DeveloperEvaluation.IoC
+src/Ambev.DeveloperEvaluation.IoC/ModuleInitializers
 tests/Ambev.DeveloperEvaluation.Unit
 tests/Ambev.DeveloperEvaluation.Functional
 tests/Ambev.DeveloperEvaluation.Integration
+tests/load
+infra/prometheus
+infra/grafana
 docs
 scripts
 ```

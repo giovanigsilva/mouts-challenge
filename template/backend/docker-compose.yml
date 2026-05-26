@@ -43,6 +43,7 @@ services:
         condition: service_started
       seq:
         condition: service_started
+    restart: unless-stopped
 
   ambev.developerevaluation.database:
     container_name: ambev_developer_evaluation_database
