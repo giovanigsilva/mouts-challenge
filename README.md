@@ -1,66 +1,201 @@
 # DeveloperStore Sales API
 
-API de vendas do desafio DeveloperStore, evoluida a partir do template Ambev.DeveloperEvaluation em .NET 8.
+Backend do desafio DeveloperStore implementado sobre o template `Ambev.DeveloperEvaluation`, usando .NET 8, Clean Architecture, DDD no dominio de vendas, CQRS com MediatR, EF Core com PostgreSQL, JWT, FluentValidation, AutoMapper, Serilog, Swagger/OpenAPI, Docker e testes unitarios.
 
-## Visao Geral
+Este README descreve exatamente o que existe nesta branch.
 
-O projeto implementa um CRUD completo de vendas usando Clean Architecture proxima do template original:
+## Status da Entrega
 
-- WebApi: endpoints HTTP, Swagger, autenticacao/autorizacao, middlewares e health checks.
-- Application: casos de uso com MediatR, validators, handlers, results e profiles.
-- Domain: entidades, aggregate Sales, regras de negocio, politica de desconto, eventos de dominio e contratos de repositorio.
-- ORM: EF Core com PostgreSQL, mappings, repositories e migrations.
-- Common: seguranca, JWT, validacao, logging e health checks compartilhados.
-- IoC: registro de dependencias.
+Implementado:
 
-Auth e Users originais foram preservados. Sales foi adicionado sem Azure real, Service Bus real, Redis obrigatorio, Key Vault real, worker real ou filas reais. Os eventos diferenciais sao registrados no log da aplicacao.
+- Auth e Users preservados do template.
+- CRUD completo de Sales.
+- Regras de desconto no Domain.
+- Aggregate `Sale` com itens protegidos.
+- External Identities com snapshot denormalizado para cliente, filial e produto.
+- EF Core/PostgreSQL com migration de Sales.
+- Eventos diferenciais registrados em log.
+- Swagger habilitado em Development e UAT.
+- Separacao de ambientes Development, UAT e Production.
+- Health checks `/health/live` e `/health/ready`.
+- Docker Compose com WebApi e PostgreSQL.
+- Testes unitarios de regras de dominio e validators.
+- Documentacao complementar na pasta `.doc` e em `template/backend/docs`.
 
-## Backend
+Fora do escopo implementado nesta versao:
+
+- Azure Service Bus real.
+- Redis obrigatorio.
+- Azure Functions.
+- Worker.
+- Outbox Pattern.
+- Key Vault real.
+- Blue-green deployment real.
+- Filas reais.
+
+Os eventos de vendas sao registrados no log da aplicacao, conforme permitido pelo enunciado da prova.
+
+## Requisitos
+
+Instale antes de executar:
+
+- .NET SDK 8
+- Docker Desktop
+- Git
+- dotnet-ef, caso ainda nao tenha:
 
 ```powershell
-cd template/backend
+dotnet tool install --global dotnet-ef
 ```
 
-Projetos principais:
+Verifique:
+
+```powershell
+dotnet --version
+docker --version
+docker compose version
+dotnet ef --version
+```
+
+## Estrutura
+
+Backend:
 
 ```text
-src/Ambev.DeveloperEvaluation.WebApi
-src/Ambev.DeveloperEvaluation.Application
-src/Ambev.DeveloperEvaluation.Domain
-src/Ambev.DeveloperEvaluation.ORM
-src/Ambev.DeveloperEvaluation.Common
-src/Ambev.DeveloperEvaluation.IoC
-tests/Ambev.DeveloperEvaluation.Unit
-tests/Ambev.DeveloperEvaluation.Integration
-tests/Ambev.DeveloperEvaluation.Functional
+template/backend
 ```
+
+Solution:
+
+```text
+template/backend/Ambev.DeveloperEvaluation.sln
+```
+
+Projetos:
+
+```text
+template/backend/src/Ambev.DeveloperEvaluation.WebApi
+template/backend/src/Ambev.DeveloperEvaluation.Application
+template/backend/src/Ambev.DeveloperEvaluation.Domain
+template/backend/src/Ambev.DeveloperEvaluation.ORM
+template/backend/src/Ambev.DeveloperEvaluation.Common
+template/backend/src/Ambev.DeveloperEvaluation.IoC
+```
+
+Testes:
+
+```text
+template/backend/tests/Ambev.DeveloperEvaluation.Unit
+template/backend/tests/Ambev.DeveloperEvaluation.Integration
+template/backend/tests/Ambev.DeveloperEvaluation.Functional
+```
+
+Documentacao:
+
+```text
+.doc
+template/backend/docs
+```
+
+## Arquitetura
+
+A solution segue a organizacao original do template:
+
+- `WebApi`: Controllers, requests, validators HTTP, middlewares, Swagger e health checks.
+- `Application`: Commands, queries, handlers, validators, results e profiles.
+- `Domain`: Entidades, regras de negocio, eventos, exceptions, services e repositories contracts.
+- `ORM`: `DefaultContext`, mappings EF Core, repositories e migrations.
+- `Common`: JWT, seguranca, logging, health checks e validacao.
+- `IoC`: registro de dependencias.
+
+Regra importante aplicada:
+
+- Controller nao contem regra de negocio.
+- Handler nao calcula desconto.
+- Repository nao decide regra de negocio.
+- Banco nao calcula regra de negocio.
+- Desconto, cancelamento e totalizacao ficam no Domain.
 
 ## Tecnologias
 
-.NET 8, ASP.NET Core, MediatR, AutoMapper, FluentValidation, EF Core, PostgreSQL/Npgsql, JWT Bearer, BCrypt, Serilog, Swagger/OpenAPI, xUnit, FluentAssertions e Docker Compose.
+- .NET 8
+- ASP.NET Core Web API
+- MediatR
+- AutoMapper
+- FluentValidation
+- Entity Framework Core
+- Npgsql/PostgreSQL
+- JWT Bearer
+- BCrypt
+- Serilog
+- Swagger/OpenAPI com Swashbuckle
+- xUnit
+- FluentAssertions
+- Docker Compose
 
-## Regras de Vendas
+## Modelo Sales
 
-Sales usa External Identities com snapshot denormalizado:
+`Sale`:
 
-- Sale armazena `CustomerExternalId`, `CustomerName`, `BranchExternalId`, `BranchName`.
-- SaleItem armazena `ProductExternalId`, `ProductName`.
-- Nao foram criados dominios reais de Customer, Branch ou Product.
+- `Id`
+- `SaleNumber`
+- `SaleDate`
+- `CustomerExternalId`
+- `CustomerName`
+- `BranchExternalId`
+- `BranchName`
+- `TotalAmount`
+- `IsCancelled`
+- `CreatedAt`
+- `UpdatedAt`
+- `Items`
 
-Politica de desconto:
+`SaleItem`:
 
-- 1 a 3 itens identicos: 0%.
-- 4 a 9 itens identicos: 10%.
-- 10 a 20 itens identicos: 20%.
-- Acima de 20 itens identicos: erro de regra de negocio.
-- Produto duplicado na mesma venda e rejeitado.
-- Item cancelado nao compoe o total financeiro.
+- `Id`
+- `SaleId`
+- `ProductExternalId`
+- `ProductName`
+- `Quantity`
+- `UnitPrice`
+- `DiscountPercentage`
+- `DiscountAmount`
+- `TotalAmount`
+- `IsCancelled`
+- `CreatedAt`
+- `UpdatedAt`
+
+## Regras de Negocio
+
+Descontos:
+
+```text
+1 a 3 itens identicos   -> 0%
+4 a 9 itens identicos   -> 10%
+10 a 20 itens identicos -> 20%
+acima de 20             -> invalido
+```
+
+Outras regras:
+
+- Nao e permitido repetir o mesmo `ProductExternalId` na mesma venda.
+- Item cancelado nao entra no total da venda.
 - Venda cancelada nao permite alteracao de itens.
-- O total da venda e sempre recalculado pelo aggregate no Domain.
+- O total da venda e recalculado pelo aggregate.
+- Desconto manual nao e aceito na request.
 
-## Endpoints Sales
+## Endpoints
 
-Todos os endpoints de Sales exigem JWT.
+Auth e Users do template:
+
+```text
+POST   /api/Auth
+POST   /api/Users
+GET    /api/Users/{id}
+DELETE /api/Users/{id}
+```
+
+Sales:
 
 ```text
 POST   /api/sales
@@ -72,36 +207,66 @@ PATCH  /api/sales/{id}/cancel
 PATCH  /api/sales/{id}/items/{itemId}/cancel
 ```
 
-Filtros da listagem: `page`, `pageSize`, `saleNumber`, `customerId`, `branchId`, `isCancelled`, `fromDate`, `toDate`.
+Filtros de `GET /api/sales`:
 
-DELETE remove fisicamente a venda. Cancelamento de venda deve usar `PATCH /api/sales/{id}/cancel`.
+```text
+page
+pageSize
+saleNumber
+customerId
+branchId
+isCancelled
+fromDate
+toDate
+```
 
-## Eventos em Log
+## Autenticacao
 
-Nao ha broker real nesta entrega simplificada. Os eventos `SaleCreated`, `SaleModified`, `SaleCancelled` e `ItemCancelled` sao registrados no application log.
+Sales exige JWT.
+
+Fluxo:
+
+1. Criar usuario em `POST /api/Users`.
+2. Autenticar em `POST /api/Auth`.
+3. Usar o token no header:
+
+```text
+Authorization: Bearer {token}
+```
+
+Policies configuradas:
+
+```text
+Sales.Read
+Sales.Write
+Sales.Cancel
+Sales.Delete
+```
+
+Nesta entrega, as policies exigem usuario autenticado.
 
 ## Ambientes
 
 Arquivos:
 
 ```text
-src/Ambev.DeveloperEvaluation.WebApi/appsettings.json
-src/Ambev.DeveloperEvaluation.WebApi/appsettings.Development.json
-src/Ambev.DeveloperEvaluation.WebApi/appsettings.Uat.json
-src/Ambev.DeveloperEvaluation.WebApi/appsettings.Production.json
+template/backend/src/Ambev.DeveloperEvaluation.WebApi/appsettings.json
+template/backend/src/Ambev.DeveloperEvaluation.WebApi/appsettings.Development.json
+template/backend/src/Ambev.DeveloperEvaluation.WebApi/appsettings.Uat.json
+template/backend/src/Ambev.DeveloperEvaluation.WebApi/appsettings.Production.json
 ```
 
 Mapeamento:
 
 ```text
-develop -> ASPNETCORE_ENVIRONMENT=Development
-uat     -> ASPNETCORE_ENVIRONMENT=Uat
-main    -> ASPNETCORE_ENVIRONMENT=Production
+develop -> Development
+uat     -> Uat
+main    -> Production
 ```
 
-Production nao contem segredo real. Em producao real, sobrescreva configuracoes por variaveis de ambiente ou Key Vault.
+Production nao possui segredo real em arquivo. Use variaveis de ambiente para connection string e JWT secret.
 
-Variaveis principais:
+Variaveis suportadas:
 
 ```text
 ASPNETCORE_ENVIRONMENT
@@ -118,139 +283,366 @@ Security__EnableSecurityHeaders
 Features__EnableDetailedErrors
 ```
 
-## Executar Localmente
+## Rodar com Docker
+
+Entre na pasta do backend:
 
 ```powershell
 cd template/backend
-docker compose up -d ambev.developerevaluation.database
-dotnet restore
-dotnet build --configuration Release --no-restore
-dotnet ef database update --project src/Ambev.DeveloperEvaluation.ORM --startup-project src/Ambev.DeveloperEvaluation.WebApi
-$env:ASPNETCORE_ENVIRONMENT="Development"
-dotnet run --project src/Ambev.DeveloperEvaluation.WebApi
 ```
 
-Swagger local:
-
-```text
-http://localhost:5119/swagger
-```
-
-Docker completo:
+Suba WebApi e PostgreSQL:
 
 ```powershell
 docker compose up --build
 ```
 
-Swagger no Docker:
+Em outro terminal, aplique as migrations:
+
+```powershell
+dotnet ef database update --project src/Ambev.DeveloperEvaluation.ORM --startup-project src/Ambev.DeveloperEvaluation.WebApi
+```
+
+URLs no Docker:
 
 ```text
-http://localhost:8080/swagger
+API:     http://localhost:8080
+Swagger: http://localhost:8080/swagger
+Live:    http://localhost:8080/health/live
+Ready:   http://localhost:8080/health/ready
 ```
 
-## Simular UAT
+Parar containers:
 
 ```powershell
-$env:ASPNETCORE_ENVIRONMENT="Uat"
-$env:ConnectionStrings__DefaultConnection="Host=localhost;Port=5432;Database=developer_evaluation;Username=developer;Password=ev@luAt10n"
-$env:Jwt__SecretKey="UatOnlySecretKeyForDeveloperStoreApi123456789"
+docker compose down
+```
+
+Remover volumes do banco local:
+
+```powershell
+docker compose down -v
+```
+
+## Rodar Local Sem Container da API
+
+Suba apenas PostgreSQL:
+
+```powershell
+cd template/backend
+docker compose up -d ambev.developerevaluation.database
+```
+
+Configure ambiente:
+
+```powershell
+$env:ASPNETCORE_ENVIRONMENT="Development"
+```
+
+Restaure, compile e aplique migrations:
+
+```powershell
+dotnet restore
+dotnet build --configuration Release --no-restore
+dotnet ef database update --project src/Ambev.DeveloperEvaluation.ORM --startup-project src/Ambev.DeveloperEvaluation.WebApi
+```
+
+Execute a API:
+
+```powershell
 dotnet run --project src/Ambev.DeveloperEvaluation.WebApi
 ```
 
-## Simular Production
+URL local comum:
 
-```powershell
-$env:ASPNETCORE_ENVIRONMENT="Production"
-$env:ConnectionStrings__DefaultConnection="Host=localhost;Port=5432;Database=developer_evaluation;Username=developer;Password=troque-esta-senha"
-$env:Jwt__SecretKey="ProductionSimulationSecretKeyWithAtLeast32Chars"
-$env:Jwt__Issuer="DeveloperStore"
-$env:Jwt__Audience="DeveloperStore"
-dotnet run --project src/Ambev.DeveloperEvaluation.WebApi
+```text
+http://localhost:5119/swagger
 ```
 
-Em Production, o startup falha se `Jwt:SecretKey`, issuer, audience ou connection string obrigatoria estiverem ausentes ou inseguros.
+A porta exata tambem aparece no output do `dotnet run`.
 
-## Testes
+## Rodar Testes
+
+Na pasta `template/backend`:
 
 ```powershell
 dotnet test --configuration Release
 ```
 
-Cobertura adicionada: descontos por quantidade, limite de 20 itens, produto duplicado, item cancelado fora do total, venda cancelada bloqueando alteracao, eventos de dominio e validators de Sales.
+Resultado validado nesta branch:
+
+```text
+71 testes unitarios passando
+0 falhas
+```
+
+Observacao: os projetos `Functional` e `Integration` existem no template, mas atualmente nao possuem testes descobertos.
+
+## Verificar Vulnerabilidades de Pacotes
+
+O comando na solution pode retornar erro por causa do projeto `docker-compose.dcproj`. Para validar os projetos .NET reais:
+
+```powershell
+$projects = Get-ChildItem -Path .\src, .\tests -Recurse -Filter *.csproj | Where-Object { $_.FullName -notmatch '\\bin\\|\\obj\\' }
+foreach ($project in $projects) {
+  dotnet list $project.FullName package --vulnerable --include-transitive
+}
+```
+
+Validado nesta branch: nenhum pacote vulneravel nos `.csproj` da solution.
 
 ## Health Checks
 
-```powershell
-curl -i http://localhost:8080/health/live
-curl -i http://localhost:8080/health/ready
-```
-
-`/health/live` verifica processo vivo. `/health/ready` verifica readiness e PostgreSQL.
-
-## Autenticacao no Swagger
-
-1. Crie ou autentique um usuario pelos endpoints existentes de Auth/Users.
-2. Copie o token JWT retornado.
-3. Clique em `Authorize`.
-4. Informe `Bearer {token}`.
-
-## Exemplo de Criacao de Venda
+Com Docker:
 
 ```powershell
-curl -X POST "http://localhost:8080/api/sales" `
-  -H "Authorization: Bearer {token}" `
-  -H "Content-Type: application/json" `
-  -d '{
-    "saleNumber": "SALE-2026-000001",
-    "saleDate": "2026-05-26T12:00:00Z",
-    "customerExternalId": "11111111-1111-1111-1111-111111111111",
-    "customerName": "Cliente Exemplo",
-    "branchExternalId": "22222222-2222-2222-2222-222222222222",
-    "branchName": "Filial Centro",
-    "items": [
-      {
-        "productExternalId": "33333333-3333-3333-3333-333333333333",
-        "productName": "Produto Exemplo",
-        "quantity": 10,
-        "unitPrice": 100
-      }
-    ]
-  }'
+curl.exe -i http://localhost:8080/health/live
+curl.exe -i http://localhost:8080/health/ready
 ```
 
-## Seguranca Aplicada
+`/health/live` valida processo vivo.
 
-- JWT Bearer com validacao de issuer, audience, lifetime e signing key.
-- Secret JWT fraco rejeitado em Production.
-- Policies `Sales.Read`, `Sales.Write`, `Sales.Cancel`, `Sales.Delete`.
+`/health/ready` valida readiness e conectividade com PostgreSQL.
+
+## Swagger
+
+Docker:
+
+```text
+http://localhost:8080/swagger
+```
+
+Local via `dotnet run`:
+
+```text
+http://localhost:5119/swagger
+```
+
+No Swagger:
+
+1. Crie usuario em `POST /api/Users`.
+2. Autentique em `POST /api/Auth`.
+3. Copie `data.token`.
+4. Clique em `Authorize`.
+5. Informe `Bearer {token}`.
+
+## Exemplo Completo com Curl
+
+Criar usuario:
+
+```powershell
+curl.exe -X POST "http://localhost:8080/api/Users" ^
+  -H "Content-Type: application/json" ^
+  -d "{\"username\":\"salesuser\",\"password\":\"Sales@12345\",\"phone\":\"+5511999999999\",\"email\":\"salesuser@example.com\",\"status\":1,\"role\":1}"
+```
+
+Autenticar:
+
+```powershell
+curl.exe -X POST "http://localhost:8080/api/Auth" ^
+  -H "Content-Type: application/json" ^
+  -d "{\"email\":\"salesuser@example.com\",\"password\":\"Sales@12345\"}"
+```
+
+Criar venda:
+
+```powershell
+curl.exe -X POST "http://localhost:8080/api/sales" ^
+  -H "Authorization: Bearer {token}" ^
+  -H "Content-Type: application/json" ^
+  -d "{\"saleNumber\":\"SALE-2026-000001\",\"saleDate\":\"2026-05-26T12:00:00Z\",\"customerExternalId\":\"11111111-1111-1111-1111-111111111111\",\"customerName\":\"Cliente Exemplo\",\"branchExternalId\":\"22222222-2222-2222-2222-222222222222\",\"branchName\":\"Filial Centro\",\"items\":[{\"productExternalId\":\"33333333-3333-3333-3333-333333333333\",\"productName\":\"Produto Exemplo\",\"quantity\":10,\"unitPrice\":100}]}"
+```
+
+Resultado esperado da venda:
+
+```text
+quantity: 10
+unitPrice: 100
+discountPercentage: 20
+totalAmount: 800
+```
+
+Listar venda:
+
+```powershell
+curl.exe -X GET "http://localhost:8080/api/sales?saleNumber=SALE-2026-000001" ^
+  -H "Authorization: Bearer {token}"
+```
+
+Cancelar venda:
+
+```powershell
+curl.exe -X PATCH "http://localhost:8080/api/sales/{saleId}/cancel" ^
+  -H "Authorization: Bearer {token}"
+```
+
+## Exemplo Completo com PowerShell
+
+```powershell
+$email = "sales.$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())@example.com"
+
+$userBody = @{
+  username = "salesuser"
+  password = "Sales@12345"
+  phone = "+5511999999999"
+  email = $email
+  status = 1
+  role = 1
+} | ConvertTo-Json
+
+Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/Users -ContentType "application/json" -Body $userBody
+
+$authBody = @{
+  email = $email
+  password = "Sales@12345"
+} | ConvertTo-Json
+
+$auth = Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/Auth -ContentType "application/json" -Body $authBody
+$headers = @{ Authorization = "Bearer $($auth.data.token)" }
+
+$saleNumber = "SALE-$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())"
+$saleBody = @{
+  saleNumber = $saleNumber
+  saleDate = "2026-05-26T12:00:00Z"
+  customerExternalId = "11111111-1111-1111-1111-111111111111"
+  customerName = "Cliente Exemplo"
+  branchExternalId = "22222222-2222-2222-2222-222222222222"
+  branchName = "Filial Centro"
+  items = @(@{
+    productExternalId = "33333333-3333-3333-3333-333333333333"
+    productName = "Produto Exemplo"
+    quantity = 10
+    unitPrice = 100
+  })
+} | ConvertTo-Json -Depth 5
+
+$sale = Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/sales -Headers $headers -ContentType "application/json" -Body $saleBody
+Invoke-RestMethod -Method Get -Uri "http://localhost:8080/api/sales?saleNumber=$saleNumber" -Headers $headers
+Invoke-RestMethod -Method Patch -Uri "http://localhost:8080/api/sales/$($sale.data.id)/cancel" -Headers $headers
+```
+
+## Migrations
+
+Criar nova migration:
+
+```powershell
+dotnet ef migrations add NomeDaMigration --project src/Ambev.DeveloperEvaluation.ORM --startup-project src/Ambev.DeveloperEvaluation.WebApi --output-dir Migrations
+```
+
+Aplicar migrations:
+
+```powershell
+dotnet ef database update --project src/Ambev.DeveloperEvaluation.ORM --startup-project src/Ambev.DeveloperEvaluation.WebApi
+```
+
+A migration de Sales criada nesta entrega:
+
+```text
+20260526164733_AddSales
+```
+
+## Eventos de Vendas
+
+Eventos registrados em log:
+
+```text
+SaleCreated
+SaleModified
+SaleCancelled
+ItemCancelled
+```
+
+Eles sao logs estruturados na aplicacao. Nao ha publicacao real em broker nesta entrega.
+
+## Seguranca
+
+Implementado:
+
+- JWT Bearer.
+- Validacao de issuer.
+- Validacao de audience.
+- Validacao de lifetime.
+- Validacao de signing key.
+- Rejeicao de secret JWT fraco em Production.
+- Policies para Sales.
 - CORS por ambiente.
-- HTTPS/HSTS controlados por configuracao.
+- HSTS/HTTPS por configuracao.
 - Security headers basicos.
-- GlobalExceptionMiddleware com resposta padronizada e correlationId.
-- CorrelationIdMiddleware com header `X-Correlation-Id`.
-- Logs sem expor segredos.
+- CorrelationId via `X-Correlation-Id`.
+- Global exception middleware.
 
-## Commits por Etapa
+## Commits da Implementacao
 
-Os commits seguem o padrao `feature: texto curto explicando a etapa`.
+Principais commits da entrega:
 
-## Checklist
+```text
+feature: preparar develop e atualizar pacotes seguros
+feature: separar ambientes development uat e production
+feature: adicionar estabilidade seguranca e health checks
+feature: implementar dominio de vendas e regras de desconto
+feature: adicionar persistencia de vendas com postgresql
+feature: implementar casos de uso de vendas
+feature: expor endpoints de vendas
+feature: registrar eventos de vendas em log
+feature: documentar api de vendas no swagger
+feature: adicionar testes unitarios de vendas
+feature: documentar execucao ambientes e validacao do projeto
+feature: ajustar validacao final da entrega
+feature: ajustar smoke test de autenticacao e vendas
+feature: atualizar documentacao oficial da prova
+```
 
-- Branch `develop`.
-- Sales CRUD completo.
-- Regras de desconto no Domain.
-- Aggregate Sale protegido.
-- External Identities por snapshot.
-- PostgreSQL via EF Core.
-- Migration de Sales e SaleItems.
-- Eventos registrados em log.
-- Swagger em PT-BR para Sales.
-- Ambientes Development, UAT e Production.
-- Health checks live e ready.
-- Testes unitarios passando.
-- Docker Compose simples com WebApi e PostgreSQL.
-- README com configuracao, execucao e teste.
+## Documentacao Complementar
 
-## Fora do Escopo Simplificado
+Pasta `.doc`:
 
-Nao foram implementados Azure Service Bus, Redis obrigatorio, Azure Functions, Outbox, Key Vault real, worker real, filas reais ou blue-green real, conforme escopo simplificado da prova.
+```text
+.doc/overview.md
+.doc/tech-stack.md
+.doc/frameworks.md
+.doc/general-api.md
+.doc/sales-api.md
+.doc/project-structure.md
+```
+
+Pasta backend:
+
+```text
+template/backend/docs/architecture.md
+template/backend/docs/environments.md
+template/backend/docs/security.md
+template/backend/docs/swagger.md
+```
+
+## Checklist Para Avaliacao
+
+Antes de enviar o link do GitHub, valide:
+
+```powershell
+cd template/backend
+dotnet restore
+dotnet build --configuration Release --no-restore
+dotnet test --configuration Release
+docker compose up --build
+```
+
+Em outro terminal:
+
+```powershell
+dotnet ef database update --project src/Ambev.DeveloperEvaluation.ORM --startup-project src/Ambev.DeveloperEvaluation.WebApi
+curl.exe -i http://localhost:8080/health/live
+curl.exe -i http://localhost:8080/health/ready
+```
+
+Depois abra:
+
+```text
+http://localhost:8080/swagger
+```
+
+## Observacoes
+
+- O projeto esta preparado para avaliacao local via Docker.
+- O `appsettings.Production.json` nao contem segredo real.
+- O banco padrao local usa usuario e senha apenas para desenvolvimento.
+- Para reiniciar a base local do zero, use `docker compose down -v` e aplique migrations novamente.
