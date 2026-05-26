@@ -25,6 +25,9 @@ public static class WebApiServiceExtensions
         builder.AddBasicHealthChecks();
         builder.Services.AddHealthChecks()
             .AddCheck<DatabaseHealthCheck>("PostgreSQL", tags: ["readiness"]);
+        builder.Services.AddHealthChecks()
+            .AddCheck<SecurityConfigurationHealthCheck>("SecurityConfiguration", tags: ["readiness"])
+            .AddCheck<VaultHealthCheck>("Vault", tags: ["readiness"]);
         builder.Services.AddDeveloperStoreSwagger(builder.Configuration);
         builder.Services.AddDeveloperStoreCors(builder.Configuration);
         builder.Services.AddDeveloperStoreRateLimiting(builder.Configuration);

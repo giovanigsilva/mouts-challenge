@@ -74,9 +74,11 @@ public static class SwaggerConfigurationExtensions
 
         Padrao de resposta: a API usa ApiResponse, ApiResponseWithData<T> e PaginatedResponse<T>. Erros retornam success=false e correlationId quando tratados pelo middleware global.
 
+        Segredos: em Development a API pode carregar segredos do HashiCorp Vault local em Docker quando Vault:Enabled=true. Se o Vault local estiver indisponivel em Development, existe fallback controlado para appsettings/env vars. Em UAT e Production, segredos devem vir de variaveis de ambiente ou do provedor seguro do ambiente hospedado. Production rejeita segredos fracos, placeholders e valores development-only.
+
         Ambientes: Development habilita Swagger e detailed errors; UAT habilita Swagger para avaliacao com detalhes limitados; Production mantem Swagger desabilitado por padrao e exige segredos por variaveis de ambiente.
 
-        Health checks: /health/live indica processo vivo e /health/ready valida prontidao e PostgreSQL.
+        Health checks: /health/live indica processo vivo e /health/ready valida prontidao, PostgreSQL, configuracoes criticas de seguranca e Vault local quando habilitado em Development.
 
         X-Correlation-Id: header opcional para rastrear requisicoes. Se nao informado, a API gera um automaticamente. Logs incluem correlationId, traceId, usuario quando autenticado, metodo HTTP, path, status code e duracao.
 
