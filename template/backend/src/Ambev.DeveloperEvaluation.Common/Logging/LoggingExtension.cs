@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Core;
@@ -7,9 +9,8 @@ using Serilog.Events;
 using Serilog.Exceptions;
 using Serilog.Exceptions.Core;
 using Serilog.Exceptions.EntityFrameworkCore.Destructurers;
-using Serilog.Sinks.SystemConsole.Themes;
-using Serilog.Templates;
-using System.Diagnostics;
+using Serilog.Debugging;
+using Serilog.Formatting.Compact;
 
 namespace Ambev.DeveloperEvaluation.Common.Logging;
 
@@ -48,39 +49,38 @@ public static class LoggingExtension
     /// <param name="builder">The <see cref="WebApplicationBuilder" /> to add services to.</param>
     /// <returns>A <see cref="WebApplicationBuilder"/> that can be used to further configure the API services.</returns>
     /// <remarks>
-    /// <para>Logging output are diferents on Debug and Release modes.</para>
+    /// <para>Logging output is JSON on console and optionally sent to Seq.</para>
     /// </remarks> 
     public static WebApplicationBuilder AddDefaultLogging(this WebApplicationBuilder builder)
     {
         Log.Logger = new LoggerConfiguration().CreateLogger();
+        if (builder.Environment.IsDevelopment() && builder.Configuration.GetValue<bool>("Observability:EnableSerilogSelfLog"))
+            SelfLog.Enable(message => Console.Error.WriteLine(message));
+
         builder.Host.UseSerilog((hostingContext, loggerConfiguration) =>
         {
+            var configuration = hostingContext.Configuration;
+            var seqEnabled = configuration.GetValue<bool>("Seq:Enabled") && configuration.GetValue<bool>("Observability:EnableSeqFallback");
+            var seqUrl = configuration["Seq:Url"];
+            var serviceName = configuration["Observability:ServiceName"] ?? configuration["Datadog:Service"] ?? builder.Environment.ApplicationName;
+            var version = configuration["Application:Version"] ?? configuration["Datadog:Version"] ?? "1.0.0";
+
             loggerConfiguration
                 .ReadFrom.Configuration(hostingContext.Configuration)
                 .Enrich.WithMachineName()
+                .Enrich.WithThreadId()
                 .Enrich.WithProperty("Environment", builder.Environment.EnvironmentName)
-                .Enrich.WithProperty("Application", builder.Environment.ApplicationName)
+                .Enrich.WithProperty("Application", serviceName)
+                .Enrich.WithProperty("Version", version)
                 .Enrich.FromLogContext()
                 .Enrich.WithExceptionDetails(_destructuringOptionsBuilder)
-                .Filter.ByExcluding(_filterPredicate);
+                .Filter.ByExcluding(_filterPredicate)
+                .WriteTo.Async(writeTo => writeTo.Console(new RenderedCompactJsonFormatter()));
 
-            if (Debugger.IsAttached)
+            if (seqEnabled && !string.IsNullOrWhiteSpace(seqUrl))
             {
-                loggerConfiguration.Enrich.WithProperty("DebuggerAttached", Debugger.IsAttached);
-                loggerConfiguration.WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}", theme: SystemConsoleTheme.Colored);
-            }
-            else
-            {
-                loggerConfiguration
-                    .WriteTo.Console
-                    (
-                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}"
-                    )
-                    .WriteTo.File(
-                        "logs/log-.txt",
-                        rollingInterval: RollingInterval.Day,
-                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}"
-                    );
+                var apiKey = configuration["Seq:ApiKey"];
+                loggerConfiguration.WriteTo.Async(writeTo => writeTo.Seq(seqUrl, apiKey: string.IsNullOrWhiteSpace(apiKey) ? null : apiKey));
             }
         });
 
@@ -96,8 +96,15 @@ public static class LoggingExtension
     {
         var logger = app.Services.GetRequiredService<ILogger<Logger>>();
 
-        var mode = Debugger.IsAttached ? "Debug" : "Release";
-        logger.LogInformation("Logging enabled for '{Application}' on '{Environment}' - Mode: {Mode}", app.Environment.ApplicationName, app.Environment.EnvironmentName, mode);
+        var configuration = app.Configuration;
+        logger.LogInformation("Logging enabled ApplicationName={ApplicationName} Version={Version} Environment={Environment} SwaggerEnabled={SwaggerEnabled} SeqEnabled={SeqEnabled} DatadogEnabled={DatadogEnabled} DetailedErrorsEnabled={DetailedErrorsEnabled}",
+            configuration["Observability:ServiceName"] ?? app.Environment.ApplicationName,
+            configuration["Application:Version"] ?? "1.0.0",
+            app.Environment.EnvironmentName,
+            configuration.GetValue<bool>("Swagger:Enabled"),
+            configuration.GetValue<bool>("Seq:Enabled") && configuration.GetValue<bool>("Observability:EnableSeqFallback"),
+            configuration.GetValue<bool>("Datadog:Enabled") && configuration.GetValue<bool>("Observability:EnableDatadog"),
+            configuration.GetValue<bool>("Features:EnableDetailedErrors"));
         return app;
 
     }
