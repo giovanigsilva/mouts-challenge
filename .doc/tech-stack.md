@@ -12,10 +12,14 @@ Backend:
   - Git: https://github.com/dotnet/core
 - **C#**: A modern object-oriented programming language developed by Microsoft.
   - Git: https://github.com/dotnet/csharplang
+- **ASP.NET Core Web API**: Framework used to expose HTTP endpoints, Swagger/OpenAPI and health checks.
+  - Git: https://github.com/dotnet/aspnetcore
 
 Testing:
 - **xUnit**: A free, open source, community-focused unit testing tool for the .NET Framework.
   - Git: https://github.com/xunit/xunit
+- **FluentAssertions**: Assertion library used by the unit tests.
+  - Git: https://github.com/fluentassertions/fluentassertions
 
 Frontend:
 - **Angular**: A platform for building mobile and desktop web applications.
@@ -24,8 +28,10 @@ Frontend:
 Databases:
 - **PostgreSQL**: A powerful, open source object-relational database system.
   - Git: https://github.com/postgres/postgres
-- **MongoDB**: A general purpose, document-based, distributed database.
-  - Git: https://github.com/mongodb/mongo
+
+Container:
+- **Docker Compose**: Used to run the WebApi and PostgreSQL locally for evaluation.
+  - Git: https://github.com/docker/compose
 
 <div style="display: flex; justify-content: space-between;">
   <a href="./overview.md">Previous: Tech Stack</a>

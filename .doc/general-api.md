@@ -8,6 +8,8 @@ Pagination is supported for list endpoints using the following query parameters:
 
 - `_page`: Page number (default: 1)
 - `_size`: Number of items per page (default: 10)
+- `page`: Page number used by the Sales API (default: 1)
+- `pageSize`: Number of items per page used by the Sales API (default: 20, maximum: 100)
 
 Example:
 ```
@@ -152,8 +154,46 @@ Example error responses:
 
 For detailed error information, refer to the specific endpoint documentation.
 
+## Authentication
+
+Protected endpoints use JWT Bearer authentication.
+
+Header format:
+
+```
+Authorization: Bearer {token}
+```
+
+Sales endpoints require an authenticated user and use the following authorization policies:
+
+- `Sales.Read`
+- `Sales.Write`
+- `Sales.Cancel`
+- `Sales.Delete`
+
+## Health Checks
+
+The backend exposes:
+
+```
+GET /health/live
+GET /health/ready
+```
+
+`/health/live` validates that the process is running. `/health/ready` validates readiness and PostgreSQL connectivity.
+
+## Environments
+
+The backend supports:
+
+- Development: `appsettings.Development.json`
+- UAT: `appsettings.Uat.json`
+- Production: `appsettings.Production.json`
+
+Production configuration must be provided through environment variables or a secure secret provider.
+
 <br>
 <div style="display: flex; justify-content: space-between;">
   <a href="./frameworks.md">Previous: Frameworks</a>
-  <a href="./products-api.md">Next: Products API</a>
+  <a href="./sales-api.md">Next: Sales API</a>
 </div>

@@ -12,8 +12,12 @@ Backend:
   - Git: https://github.com/jbogard/MediatR
 - **Automapper**: A convention-based object-object mapper that simplifies the process of mapping one object to another.
   - Git: https://github.com/AutoMapper/AutoMapper
-- **Rebus**: A lean service bus implementation for .NET, providing a simple and flexible way to do messaging and queueing in .NET applications.
-  - Git: https://github.com/rebus-org/Rebus
+- **FluentValidation**: Validation framework used for requests, commands and queries.
+  - Git: https://github.com/FluentValidation/FluentValidation
+- **Swashbuckle**: Swagger/OpenAPI generation for ASP.NET Core.
+  - Git: https://github.com/domaindrivendev/Swashbuckle.AspNetCore
+- **Serilog**: Structured logging used by the API and Sales event logs.
+  - Git: https://github.com/serilog/serilog
 
 Testing:
 - **Faker**: A library for generating fake data for testing purposes, allowing for more realistic and diverse test scenarios.
@@ -24,6 +28,8 @@ Testing:
 Database:
 - **EF Core**: Entity Framework Core, a lightweight, extensible, and cross-platform version of Entity Framework, used for data access and object-relational mapping.
   - Git: https://github.com/dotnet/efcore
+- **Npgsql EF Core Provider**: PostgreSQL provider used by Entity Framework Core.
+  - Git: https://github.com/npgsql/efcore.pg
 
 <br>
 <div style="display: flex; justify-content: space-between;">
