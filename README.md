@@ -10,6 +10,7 @@ Implementado:
 
 - Auth e Users preservados do template.
 - CRUD completo de Sales.
+- Frontend React completo para demonstrar login, dashboard, vendas, cancelamentos e saúde da API.
 - Regras de desconto no Domain.
 - Aggregate `Sale` com itens protegidos.
 - External Identities com snapshot denormalizado para cliente, filial e produto.
@@ -65,6 +66,12 @@ Backend:
 template/backend
 ```
 
+Frontend:
+
+```text
+template/frontend
+```
+
 Solution:
 
 ```text
@@ -95,6 +102,7 @@ Documentacao:
 ```text
 .doc
 template/backend/docs
+template/frontend/README.md
 ```
 
 ## Arquitetura
@@ -132,6 +140,79 @@ Regra importante aplicada:
 - xUnit
 - FluentAssertions
 - Docker Compose
+- React
+- TypeScript
+- Vite
+- React Router
+- TanStack Query
+- React Hook Form
+- Zod
+- Tailwind CSS
+- Axios
+- Motion for React
+- Sonner
+- Lucide React
+
+## Frontend React
+
+O frontend foi implementado em `template/frontend` para demonstrar visualmente a prova consumindo a API real em `http://localhost:8080`.
+
+Funcionalidades implementadas:
+
+- Login com JWT Bearer.
+- Botão `Usar demo` na tela de login.
+- Rotas protegidas.
+- Dashboard/Painel com indicadores da listagem de vendas.
+- CRUD visual de vendas.
+- Cancelamento de venda.
+- Cancelamento de item.
+- Validação de formulários com Zod.
+- Bloqueio de produto duplicado na mesma venda com aviso na tela.
+- Aviso para item cancelado que não pode ser editado.
+- Health page consumindo endpoints de saúde.
+- reCAPTCHA v3 simulado exibido visualmente no login.
+- Interface em PT-BR com textos acentuados.
+
+Executar com Docker:
+
+```powershell
+cd template/backend
+docker compose up --build -d
+```
+
+Acessar:
+
+```text
+http://localhost:5173/
+```
+
+Login rápido:
+
+1. Abra `http://localhost:5173/`.
+2. Clique em `Usar demo`.
+3. Clique em `Entrar`.
+
+Credenciais preenchidas pelo botão:
+
+```text
+E-mail: admin@developerstore.com
+Senha:  Senha@123456
+```
+
+Executar sem Docker:
+
+```powershell
+cd template/frontend
+Copy-Item .env.example .env
+npm install
+npm run dev
+```
+
+Documentação específica:
+
+```text
+template/frontend/README.md
+```
 
 ## Modelo Sales
 
