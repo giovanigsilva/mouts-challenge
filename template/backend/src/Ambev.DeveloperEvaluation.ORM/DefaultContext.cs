@@ -26,9 +26,21 @@ public class YourDbContextFactory : IDesignTimeDbContextFactory<DefaultContext>
 {
     public DefaultContext CreateDbContext(string[] args)
     {
+        var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
+        var currentDirectory = new DirectoryInfo(Directory.GetCurrentDirectory());
+        while (currentDirectory is not null && !Directory.Exists(Path.Combine(currentDirectory.FullName, "src", "Ambev.DeveloperEvaluation.WebApi")))
+            currentDirectory = currentDirectory.Parent;
+
+        if (currentDirectory is null)
+            throw new InvalidOperationException("Nao foi possivel localizar o projeto Ambev.DeveloperEvaluation.WebApi para carregar as configuracoes.");
+
+        var webApiPath = Path.Combine(currentDirectory.FullName, "src", "Ambev.DeveloperEvaluation.WebApi");
+
         IConfigurationRoot configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
+            .SetBasePath(webApiPath)
             .AddJsonFile("appsettings.json")
+            .AddJsonFile($"appsettings.{environment}.json", optional: true)
+            .AddEnvironmentVariables()
             .Build();
 
         var builder = new DbContextOptionsBuilder<DefaultContext>();
