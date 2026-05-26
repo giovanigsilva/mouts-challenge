@@ -1,3 +1,4 @@
+using Ambev.DeveloperEvaluation.Application.Common.Caching;
 using Ambev.DeveloperEvaluation.Application.Sales.Common;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
 using AutoMapper;
@@ -10,12 +11,14 @@ namespace Ambev.DeveloperEvaluation.Application.Sales.CancelSale;
 public class CancelSaleHandler : IRequestHandler<CancelSaleCommand, SaleResult>
 {
     private readonly ISaleRepository _saleRepository;
+    private readonly ISalesCacheInvalidator _salesCacheInvalidator;
     private readonly IMapper _mapper;
     private readonly ILogger<CancelSaleHandler> _logger;
 
-    public CancelSaleHandler(ISaleRepository saleRepository, IMapper mapper, ILogger<CancelSaleHandler> logger)
+    public CancelSaleHandler(ISaleRepository saleRepository, ISalesCacheInvalidator salesCacheInvalidator, IMapper mapper, ILogger<CancelSaleHandler> logger)
     {
         _saleRepository = saleRepository;
+        _salesCacheInvalidator = salesCacheInvalidator;
         _mapper = mapper;
         _logger = logger;
     }
@@ -37,6 +40,7 @@ public class CancelSaleHandler : IRequestHandler<CancelSaleCommand, SaleResult>
 
         sale.Cancel();
         var updatedSale = await _saleRepository.UpdateAsync(sale, cancellationToken);
+        await _salesCacheInvalidator.InvalidateAsync(updatedSale.Id, "CancelSale", cancellationToken);
         try
         {
             _logger.LogInformation("AuditEvent={AuditEventName} Action={Action} Result={Result} TargetEntityType={TargetEntityType} TargetEntityId={TargetEntityId} SaleId={SaleId} SaleNumber={SaleNumber} CustomerExternalId={CustomerExternalId} BranchExternalId={BranchExternalId} TotalAmount={TotalAmount} OccurredAtUtc={OccurredAtUtc}", "SaleCancelled", "CancelSale", "Success", "Sale", updatedSale.Id, updatedSale.Id, updatedSale.SaleNumber, updatedSale.CustomerExternalId, updatedSale.BranchExternalId, updatedSale.TotalAmount, DateTime.UtcNow);

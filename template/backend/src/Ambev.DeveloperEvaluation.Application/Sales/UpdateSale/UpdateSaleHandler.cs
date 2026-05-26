@@ -1,3 +1,4 @@
+using Ambev.DeveloperEvaluation.Application.Common.Caching;
 using Ambev.DeveloperEvaluation.Application.Sales.Common;
 using Ambev.DeveloperEvaluation.Domain.Entities;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
@@ -11,12 +12,14 @@ namespace Ambev.DeveloperEvaluation.Application.Sales.UpdateSale;
 public class UpdateSaleHandler : IRequestHandler<UpdateSaleCommand, SaleResult>
 {
     private readonly ISaleRepository _saleRepository;
+    private readonly ISalesCacheInvalidator _salesCacheInvalidator;
     private readonly IMapper _mapper;
     private readonly ILogger<UpdateSaleHandler> _logger;
 
-    public UpdateSaleHandler(ISaleRepository saleRepository, IMapper mapper, ILogger<UpdateSaleHandler> logger)
+    public UpdateSaleHandler(ISaleRepository saleRepository, ISalesCacheInvalidator salesCacheInvalidator, IMapper mapper, ILogger<UpdateSaleHandler> logger)
     {
         _saleRepository = saleRepository;
+        _salesCacheInvalidator = salesCacheInvalidator;
         _mapper = mapper;
         _logger = logger;
     }
@@ -48,6 +51,7 @@ public class UpdateSaleHandler : IRequestHandler<UpdateSaleCommand, SaleResult>
         var items = command.Items.Select(item => new SaleItem(item.ProductExternalId, item.ProductName, item.Quantity, item.UnitPrice));
         sale.Update(command.SaleNumber, command.SaleDate, command.CustomerExternalId, command.CustomerName, command.BranchExternalId, command.BranchName, items);
         var updatedSale = await _saleRepository.UpdateAsync(sale, cancellationToken);
+        await _salesCacheInvalidator.InvalidateAsync(updatedSale.Id, "UpdateSale", cancellationToken);
         try
         {
             _logger.LogInformation("AuditEvent={AuditEventName} Action={Action} Result={Result} TargetEntityType={TargetEntityType} TargetEntityId={TargetEntityId} SaleId={SaleId} SaleNumber={SaleNumber} CustomerExternalId={CustomerExternalId} BranchExternalId={BranchExternalId} TotalAmount={TotalAmount} OccurredAtUtc={OccurredAtUtc}", "SaleUpdated", "UpdateSale", "Success", "Sale", updatedSale.Id, updatedSale.Id, updatedSale.SaleNumber, updatedSale.CustomerExternalId, updatedSale.BranchExternalId, updatedSale.TotalAmount, DateTime.UtcNow);

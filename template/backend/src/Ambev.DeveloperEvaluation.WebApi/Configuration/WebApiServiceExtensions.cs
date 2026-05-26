@@ -91,6 +91,8 @@ public static class WebApiServiceExtensions
             services.AddScoped<ICacheService, NoOpCacheService>();
         }
 
+        services.AddScoped<ISalesCacheInvalidator, SalesCacheInvalidator>();
+
         return services;
     }
 

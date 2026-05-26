@@ -1,3 +1,4 @@
+using Ambev.DeveloperEvaluation.Application.Common.Caching;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
 using FluentValidation;
 using MediatR;
@@ -8,11 +9,13 @@ namespace Ambev.DeveloperEvaluation.Application.Sales.DeleteSale;
 public class DeleteSaleHandler : IRequestHandler<DeleteSaleCommand, DeleteSaleResult>
 {
     private readonly ISaleRepository _saleRepository;
+    private readonly ISalesCacheInvalidator _salesCacheInvalidator;
     private readonly ILogger<DeleteSaleHandler> _logger;
 
-    public DeleteSaleHandler(ISaleRepository saleRepository, ILogger<DeleteSaleHandler> logger)
+    public DeleteSaleHandler(ISaleRepository saleRepository, ISalesCacheInvalidator salesCacheInvalidator, ILogger<DeleteSaleHandler> logger)
     {
         _saleRepository = saleRepository;
+        _salesCacheInvalidator = salesCacheInvalidator;
         _logger = logger;
     }
 
@@ -31,6 +34,7 @@ public class DeleteSaleHandler : IRequestHandler<DeleteSaleCommand, DeleteSaleRe
             throw new KeyNotFoundException($"Venda com ID {command.Id} nao encontrada.");
         }
 
+        await _salesCacheInvalidator.InvalidateAsync(command.Id, "DeleteSale", cancellationToken);
         _logger.LogInformation("AuditEvent={AuditEventName} Action={Action} Result={Result} TargetEntityType={TargetEntityType} TargetEntityId={TargetEntityId} OccurredAtUtc={OccurredAtUtc}", "SaleDeleted", "DeleteSale", "Success", "Sale", command.Id, DateTime.UtcNow);
         return new DeleteSaleResult { Success = true };
     }
