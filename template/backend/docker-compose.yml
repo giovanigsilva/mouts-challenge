@@ -45,8 +45,9 @@ services:
     image: datalust/seq:2024.3
     environment:
       ACCEPT_EULA: "Y"
+      SEQ_API_LISTENURIS: "http://0.0.0.0:5341"
     ports:
-      - "5341:80"
+      - "5341:5341"
     volumes:
       - seq-data:/data
     restart: unless-stopped
@@ -55,7 +56,7 @@ services:
     container_name: developerstore_datadog_agent
     image: gcr.io/datadoghq/agent:7
     environment:
-      DD_API_KEY: ${DD_API_KEY:-}
+      DD_API_KEY: ${DD_API_KEY:-00000000000000000000000000000000}
       DD_SITE: ${DD_SITE:-datadoghq.com}
       DD_LOGS_ENABLED: "true"
       DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL: "true"
