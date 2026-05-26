@@ -4,6 +4,7 @@ import { NavLink } from 'react-router-dom'
 
 import { Badge } from '@/shared/components/ui/badge'
 import { Button } from '@/shared/components/ui/button'
+import { PageTransition } from '@/shared/components/feedback/PageTransition'
 import { cn } from '@/shared/lib/cn'
 
 const navItems = [
@@ -69,7 +70,7 @@ export function AppShell({ children, userLabel = 'Usuario autenticado', onLogout
             </div>
           </div>
         </header>
-        {children}
+        <PageTransition>{children}</PageTransition>
       </div>
     </div>
   )
