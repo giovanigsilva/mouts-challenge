@@ -120,12 +120,12 @@ public static class HealthChecksExtension
                         name = e.Key,
                         status = e.Value.Status.ToString(),
                         description = e.Value.Description,
-                        errorMessage = e.Value.Exception?.Message,
+                        errorMessage = e.Value.Exception is null ? null : "Falha ao validar dependencia.",
                         hostEnvironment = app.Environment.EnvironmentName.ToLowerInvariant()
                     }),
                 };
                 context.Response.ContentType = MediaTypeNames.Application.Json;
-                await context.Response.WriteAsJsonAsync(result);
+                await context.Response.WriteAsJsonAsync(result, context.RequestAborted);
             },
         };
 

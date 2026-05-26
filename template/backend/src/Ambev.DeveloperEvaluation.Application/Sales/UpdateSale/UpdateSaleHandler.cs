@@ -40,7 +40,14 @@ public class UpdateSaleHandler : IRequestHandler<UpdateSaleCommand, SaleResult>
         var items = command.Items.Select(item => new SaleItem(item.ProductExternalId, item.ProductName, item.Quantity, item.UnitPrice));
         sale.Update(command.SaleNumber, command.SaleDate, command.CustomerExternalId, command.CustomerName, command.BranchExternalId, command.BranchName, items);
         var updatedSale = await _saleRepository.UpdateAsync(sale, cancellationToken);
-        _logger.LogInformation("SaleModified SaleId={SaleId} SaleNumber={SaleNumber} CustomerExternalId={CustomerExternalId} BranchExternalId={BranchExternalId} TotalAmount={TotalAmount} OccurredAt={OccurredAt}", updatedSale.Id, updatedSale.SaleNumber, updatedSale.CustomerExternalId, updatedSale.BranchExternalId, updatedSale.TotalAmount, DateTime.UtcNow);
+        try
+        {
+            _logger.LogInformation("SaleModified SaleId={SaleId} SaleNumber={SaleNumber} CustomerExternalId={CustomerExternalId} BranchExternalId={BranchExternalId} TotalAmount={TotalAmount} OccurredAt={OccurredAt}", updatedSale.Id, updatedSale.SaleNumber, updatedSale.CustomerExternalId, updatedSale.BranchExternalId, updatedSale.TotalAmount, DateTime.UtcNow);
+        }
+        catch (Exception logException)
+        {
+            _logger.LogWarning(logException, "Falha ao registrar evento SaleModified em log. SaleId={SaleId}", updatedSale.Id);
+        }
 
         return _mapper.Map<SaleResult>(updatedSale);
     }

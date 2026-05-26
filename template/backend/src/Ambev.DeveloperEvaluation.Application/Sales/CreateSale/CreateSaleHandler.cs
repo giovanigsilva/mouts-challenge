@@ -36,7 +36,14 @@ public class CreateSaleHandler : IRequestHandler<CreateSaleCommand, SaleResult>
         var items = command.Items.Select(item => new SaleItem(item.ProductExternalId, item.ProductName, item.Quantity, item.UnitPrice));
         var sale = new Sale(command.SaleNumber, command.SaleDate, command.CustomerExternalId, command.CustomerName, command.BranchExternalId, command.BranchName, items);
         var createdSale = await _saleRepository.CreateAsync(sale, cancellationToken);
-        _logger.LogInformation("SaleCreated SaleId={SaleId} SaleNumber={SaleNumber} CustomerExternalId={CustomerExternalId} BranchExternalId={BranchExternalId} TotalAmount={TotalAmount} OccurredAt={OccurredAt}", createdSale.Id, createdSale.SaleNumber, createdSale.CustomerExternalId, createdSale.BranchExternalId, createdSale.TotalAmount, DateTime.UtcNow);
+        try
+        {
+            _logger.LogInformation("SaleCreated SaleId={SaleId} SaleNumber={SaleNumber} CustomerExternalId={CustomerExternalId} BranchExternalId={BranchExternalId} TotalAmount={TotalAmount} OccurredAt={OccurredAt}", createdSale.Id, createdSale.SaleNumber, createdSale.CustomerExternalId, createdSale.BranchExternalId, createdSale.TotalAmount, DateTime.UtcNow);
+        }
+        catch (Exception logException)
+        {
+            _logger.LogWarning(logException, "Falha ao registrar evento SaleCreated em log. SaleId={SaleId}", createdSale.Id);
+        }
 
         return _mapper.Map<SaleResult>(createdSale);
     }
