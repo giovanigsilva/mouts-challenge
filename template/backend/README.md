@@ -126,25 +126,24 @@ export VAULT_TOKEN=dev-root-token
 
 O script usa o Vault CLI se estiver instalado. Se nao estiver, ele executa o comando pelo container `developerstore-vault`.
 
-### 4. Aplicar migrations
+### 4. Subir a WebApi
 
-Com o PostgreSQL e o Vault rodando, aplique as migrations:
-
-```powershell
-$env:ASPNETCORE_ENVIRONMENT="Development"
-dotnet ef database update --project src/Ambev.DeveloperEvaluation.ORM --startup-project src/Ambev.DeveloperEvaluation.WebApi
-```
-
-### 5. Subir a WebApi
+Ao iniciar, a API espera o PostgreSQL ficar saudavel, valida a conexao com o banco e aplica automaticamente migrations pendentes. Se for a primeira execucao, as tabelas sao criadas nesse momento.
 
 ```powershell
 docker compose up --build -d ambev.developerevaluation.webapi
 ```
 
-### 6. Verificar containers
+### 5. Verificar containers
 
 ```powershell
 docker compose ps
+```
+
+### 6. Conferir logs de migrations na primeira subida
+
+```powershell
+docker logs --tail 100 ambev_developer_evaluation_webapi
 ```
 
 Devem aparecer pelo menos:
@@ -174,7 +173,7 @@ Startup project:
 src/Ambev.DeveloperEvaluation.WebApi
 ```
 
-Comando:
+Normalmente nao e necessario aplicar migrations manualmente em Development, porque a API confere e aplica migrations pendentes na inicializacao. O comando manual abaixo continua util para diagnostico ou manutencao:
 
 ```powershell
 $env:ASPNETCORE_ENVIRONMENT="Development"
@@ -656,4 +655,3 @@ docker compose down
 - Seq: `http://localhost:5341`
 - Vault: `http://localhost:8200`
 - PostgreSQL: `localhost:5432`
-

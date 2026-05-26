@@ -5,7 +5,7 @@ namespace Ambev.DeveloperEvaluation.WebApi;
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         try
         {
@@ -17,6 +17,7 @@ public class Program
             builder.AddWebApiServices();
 
             var app = builder.Build();
+            await app.ApplyDatabaseMigrationsAsync();
             app.UseWebApiPipeline();
 
             app.Run();

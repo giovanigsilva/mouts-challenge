@@ -32,9 +32,12 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - ambev.developerevaluation.database
-      - vault
-      - seq
+      ambev.developerevaluation.database:
+        condition: service_healthy
+      vault:
+        condition: service_started
+      seq:
+        condition: service_started
 
   ambev.developerevaluation.database:
     container_name: ambev_developer_evaluation_database
@@ -47,6 +50,12 @@ services:
     ports:
       - "5432:5432"
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U developerstore_app -d developer_evaluation"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
 
   vault:
     container_name: developerstore-vault
