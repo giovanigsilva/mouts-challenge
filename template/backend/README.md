@@ -397,7 +397,7 @@ http://localhost:5119/swagger
 Comandos:
 
 ```powershell
-dotnet restore
+dotnet restore .\Ambev.DeveloperEvaluation.sln
 dotnet build .\Ambev.DeveloperEvaluation.sln --configuration Release --no-restore
 dotnet test .\Ambev.DeveloperEvaluation.sln --configuration Release --no-build
 ```
