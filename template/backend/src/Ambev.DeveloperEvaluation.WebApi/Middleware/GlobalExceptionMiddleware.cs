@@ -2,6 +2,7 @@ using Ambev.DeveloperEvaluation.Common.Validation;
 using Ambev.DeveloperEvaluation.WebApi.Common;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Serilog.Context;
 using System.Text.Json;
 
 namespace Ambev.DeveloperEvaluation.WebApi.Middleware;
@@ -63,18 +64,25 @@ public sealed class GlobalExceptionMiddleware
             _ => StatusCodes.Status500InternalServerError
         };
 
-        if (exception is OperationCanceledException)
-            _logger.LogInformation(exception, "Requisicao cancelada pelo cliente. CorrelationId: {CorrelationId} Method: {Method} Path: {Path} StatusCode: {StatusCode} UserId: {UserId}", correlationId, context.Request.Method, context.Request.Path, statusCode, context.User?.Identity?.Name);
-        else if (statusCode == StatusCodes.Status500InternalServerError)
-            _logger.LogError(exception, "Erro inesperado ao processar requisicao. CorrelationId: {CorrelationId} Method: {Method} Path: {Path} StatusCode: {StatusCode} UserId: {UserId}", correlationId, context.Request.Method, context.Request.Path, statusCode, context.User?.Identity?.Name);
-        else
-            _logger.LogWarning(exception, "Erro tratado ao processar requisicao. CorrelationId: {CorrelationId} Method: {Method} Path: {Path} StatusCode: {StatusCode} UserId: {UserId}", correlationId, context.Request.Method, context.Request.Path, statusCode, context.User?.Identity?.Name);
+        var message = GetSafeMessage(exception, statusCode);
+        var resultStatus = statusCode >= 500 ? "Error" : statusCode >= 400 ? "Warning" : "Cancelled";
+
+        using (LogContext.PushProperty("ExceptionType", exception.GetType().Name))
+        using (LogContext.PushProperty("SafeMessage", message))
+        using (LogContext.PushProperty("StatusCode", statusCode))
+        using (LogContext.PushProperty("ResultStatus", resultStatus))
+        {
+            if (exception is OperationCanceledException)
+                _logger.LogInformation(exception, "Requisicao cancelada pelo cliente. CorrelationId={CorrelationId} Method={Method} Path={Path} StatusCode={StatusCode} UserId={UserId} ExceptionType={ExceptionType}", correlationId, context.Request.Method, context.Request.Path, statusCode, context.User?.Identity?.Name, exception.GetType().Name);
+            else if (statusCode == StatusCodes.Status500InternalServerError)
+                _logger.LogError(exception, "Erro inesperado ao processar requisicao. CorrelationId={CorrelationId} Method={Method} Path={Path} StatusCode={StatusCode} UserId={UserId} ExceptionType={ExceptionType}", correlationId, context.Request.Method, context.Request.Path, statusCode, context.User?.Identity?.Name, exception.GetType().Name);
+            else
+                _logger.LogWarning(exception, "Erro tratado ao processar requisicao. CorrelationId={CorrelationId} Method={Method} Path={Path} StatusCode={StatusCode} UserId={UserId} ExceptionType={ExceptionType}", correlationId, context.Request.Method, context.Request.Path, statusCode, context.User?.Identity?.Name, exception.GetType().Name);
+        }
 
         var errors = exception is ValidationException validationException
             ? validationException.Errors.Select(error => (ValidationErrorDetail)error)
             : [];
-
-        var message = GetSafeMessage(exception, statusCode);
 
         var response = new
         {
