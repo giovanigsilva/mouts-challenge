@@ -7,12 +7,16 @@ using Ambev.DeveloperEvaluation.Common.Validation;
 using Ambev.DeveloperEvaluation.IoC;
 using Ambev.DeveloperEvaluation.ORM;
 using Ambev.DeveloperEvaluation.Application.Common.Caching;
+using Ambev.DeveloperEvaluation.Application.Common.Metrics;
 using Ambev.DeveloperEvaluation.WebApi.Caching;
 using Ambev.DeveloperEvaluation.WebApi.HealthChecks;
+using Ambev.DeveloperEvaluation.WebApi.Observability;
 using Ambev.DeveloperEvaluation.WebApi.Swagger;
 using MediatR;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
 using System.Threading.RateLimiting;
 
 namespace Ambev.DeveloperEvaluation.WebApi.Configuration;
@@ -35,6 +39,7 @@ public static class WebApiServiceExtensions
         builder.Services.AddDeveloperStoreRateLimiting(builder.Configuration);
         builder.Services.AddDeveloperStoreDatabase(builder.Configuration);
         builder.Services.AddDeveloperStoreCache(builder.Configuration);
+        builder.Services.AddDeveloperStoreMetrics(builder.Configuration);
         builder.Services.AddJwtAuthentication(builder.Configuration);
         builder.Services.AddDeveloperStoreAuthorization();
         builder.RegisterDependencies();
@@ -92,6 +97,37 @@ public static class WebApiServiceExtensions
         }
 
         services.AddScoped<ISalesCacheInvalidator, SalesCacheInvalidator>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddDeveloperStoreMetrics(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<MetricsOptions>(configuration.GetSection("Metrics"));
+
+        if (!configuration.GetValue<bool>("Metrics:Enabled"))
+        {
+            services.AddSingleton<IApplicationMetrics, NoOpApplicationMetrics>();
+            return services;
+        }
+
+        var serviceName = configuration["OpenTelemetry:ServiceName"] ?? "developerstore-sales-api";
+        var serviceVersion = configuration["OpenTelemetry:ServiceVersion"] ?? "1.0.0";
+
+        services.AddSingleton<IApplicationMetrics, DeveloperStoreMetrics>();
+        services.AddOpenTelemetry()
+            .ConfigureResource(resource => resource.AddService(serviceName, serviceVersion: serviceVersion))
+            .WithMetrics(metrics =>
+            {
+                metrics
+                    .AddMeter(DeveloperStoreMetrics.MeterName)
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation()
+                    .AddRuntimeInstrumentation();
+
+                if (configuration.GetValue<bool>("Metrics:EnablePrometheusEndpoint"))
+                    metrics.AddPrometheusExporter();
+            });
 
         return services;
     }

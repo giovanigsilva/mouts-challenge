@@ -1,4 +1,5 @@
 using Ambev.DeveloperEvaluation.Application.Common.Caching;
+using Ambev.DeveloperEvaluation.Application.Common.Metrics;
 using Ambev.DeveloperEvaluation.Application.Sales.Common;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
 using AutoMapper;
@@ -12,13 +13,15 @@ public class CancelSaleItemHandler : IRequestHandler<CancelSaleItemCommand, Sale
 {
     private readonly ISaleRepository _saleRepository;
     private readonly ISalesCacheInvalidator _salesCacheInvalidator;
+    private readonly IApplicationMetrics _metrics;
     private readonly IMapper _mapper;
     private readonly ILogger<CancelSaleItemHandler> _logger;
 
-    public CancelSaleItemHandler(ISaleRepository saleRepository, ISalesCacheInvalidator salesCacheInvalidator, IMapper mapper, ILogger<CancelSaleItemHandler> logger)
+    public CancelSaleItemHandler(ISaleRepository saleRepository, ISalesCacheInvalidator salesCacheInvalidator, IApplicationMetrics metrics, IMapper mapper, ILogger<CancelSaleItemHandler> logger)
     {
         _saleRepository = saleRepository;
         _salesCacheInvalidator = salesCacheInvalidator;
+        _metrics = metrics;
         _mapper = mapper;
         _logger = logger;
     }
@@ -41,6 +44,7 @@ public class CancelSaleItemHandler : IRequestHandler<CancelSaleItemCommand, Sale
         sale.CancelItem(command.ItemId);
         var updatedSale = await _saleRepository.UpdateAsync(sale, cancellationToken);
         await _salesCacheInvalidator.InvalidateAsync(updatedSale.Id, "CancelSaleItem", cancellationToken);
+        _metrics.SaleItemCancelled();
         var item = updatedSale.Items.First(current => current.Id == command.ItemId);
         try
         {

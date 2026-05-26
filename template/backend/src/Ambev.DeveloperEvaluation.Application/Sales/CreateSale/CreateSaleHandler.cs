@@ -1,4 +1,5 @@
 using Ambev.DeveloperEvaluation.Application.Common.Caching;
+using Ambev.DeveloperEvaluation.Application.Common.Metrics;
 using Ambev.DeveloperEvaluation.Application.Sales.Common;
 using Ambev.DeveloperEvaluation.Domain.Entities;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
@@ -13,13 +14,15 @@ public class CreateSaleHandler : IRequestHandler<CreateSaleCommand, SaleResult>
 {
     private readonly ISaleRepository _saleRepository;
     private readonly ISalesCacheInvalidator _salesCacheInvalidator;
+    private readonly IApplicationMetrics _metrics;
     private readonly IMapper _mapper;
     private readonly ILogger<CreateSaleHandler> _logger;
 
-    public CreateSaleHandler(ISaleRepository saleRepository, ISalesCacheInvalidator salesCacheInvalidator, IMapper mapper, ILogger<CreateSaleHandler> logger)
+    public CreateSaleHandler(ISaleRepository saleRepository, ISalesCacheInvalidator salesCacheInvalidator, IApplicationMetrics metrics, IMapper mapper, ILogger<CreateSaleHandler> logger)
     {
         _saleRepository = saleRepository;
         _salesCacheInvalidator = salesCacheInvalidator;
+        _metrics = metrics;
         _mapper = mapper;
         _logger = logger;
     }
@@ -45,6 +48,7 @@ public class CreateSaleHandler : IRequestHandler<CreateSaleCommand, SaleResult>
         var sale = new Sale(command.SaleNumber, command.SaleDate, command.CustomerExternalId, command.CustomerName, command.BranchExternalId, command.BranchName, items);
         var createdSale = await _saleRepository.CreateAsync(sale, cancellationToken);
         await _salesCacheInvalidator.InvalidateAsync(createdSale.Id, "CreateSale", cancellationToken);
+        _metrics.SaleCreated();
         try
         {
             _logger.LogInformation("AuditEvent={AuditEventName} Action={Action} Result={Result} TargetEntityType={TargetEntityType} TargetEntityId={TargetEntityId} SaleId={SaleId} SaleNumber={SaleNumber} CustomerExternalId={CustomerExternalId} BranchExternalId={BranchExternalId} TotalAmount={TotalAmount} OccurredAtUtc={OccurredAtUtc}", "SaleCreated", "CreateSale", "Success", "Sale", createdSale.Id, createdSale.Id, createdSale.SaleNumber, createdSale.CustomerExternalId, createdSale.BranchExternalId, createdSale.TotalAmount, DateTime.UtcNow);

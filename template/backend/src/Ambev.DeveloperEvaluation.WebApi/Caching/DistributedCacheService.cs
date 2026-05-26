@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Ambev.DeveloperEvaluation.Application.Common.Caching;
+using Ambev.DeveloperEvaluation.Application.Common.Metrics;
 using Ambev.DeveloperEvaluation.WebApi.Configuration;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
@@ -11,12 +12,14 @@ public sealed class DistributedCacheService : ICacheService
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
 
     private readonly IDistributedCache _cache;
+    private readonly IApplicationMetrics _metrics;
     private readonly CacheOptions _options;
     private readonly ILogger<DistributedCacheService> _logger;
 
-    public DistributedCacheService(IDistributedCache cache, IOptions<CacheOptions> options, ILogger<DistributedCacheService> logger)
+    public DistributedCacheService(IDistributedCache cache, IApplicationMetrics metrics, IOptions<CacheOptions> options, ILogger<DistributedCacheService> logger)
     {
         _cache = cache;
+        _metrics = metrics;
         _options = options.Value;
         _logger = logger;
     }
@@ -31,15 +34,18 @@ public sealed class DistributedCacheService : ICacheService
             var value = await _cache.GetStringAsync(key, cancellationToken);
             if (string.IsNullOrWhiteSpace(value))
             {
+                _metrics.CacheMiss(cacheKeyType);
                 _logger.LogInformation("CacheMiss CacheKeyType={CacheKeyType}", cacheKeyType);
                 return default;
             }
 
+            _metrics.CacheHit(cacheKeyType);
             _logger.LogInformation("CacheHit CacheKeyType={CacheKeyType}", cacheKeyType);
             return JsonSerializer.Deserialize<T>(value, SerializerOptions);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
+            _metrics.CacheError(cacheKeyType);
             _logger.LogWarning(exception, "CacheError OperationName={OperationName} CacheKeyType={CacheKeyType} ExceptionType={ExceptionType}", "Get", cacheKeyType, exception.GetType().Name);
             return default;
         }
@@ -58,6 +64,7 @@ public sealed class DistributedCacheService : ICacheService
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
+            _metrics.CacheError(cacheKeyType);
             _logger.LogWarning(exception, "CacheError OperationName={OperationName} CacheKeyType={CacheKeyType} ExceptionType={ExceptionType}", "Set", cacheKeyType, exception.GetType().Name);
         }
     }
@@ -82,10 +89,12 @@ public sealed class DistributedCacheService : ICacheService
         try
         {
             await _cache.RemoveAsync(key, cancellationToken);
+            _metrics.CacheInvalidated(cacheKeyType);
             _logger.LogInformation("CacheInvalidated CacheKeyType={CacheKeyType}", cacheKeyType);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
+            _metrics.CacheError(cacheKeyType);
             _logger.LogWarning(exception, "CacheError OperationName={OperationName} CacheKeyType={CacheKeyType} ExceptionType={ExceptionType}", "Remove", cacheKeyType, exception.GetType().Name);
         }
     }

@@ -33,6 +33,11 @@ public static class WebApiPipelineExtensions
         app.UseAuthorization();
         app.UseBasicHealthChecks();
         app.MapLoggingHealthCheck();
+        app.MapMetricsHealthCheck();
+
+        if (app.Configuration.GetValue<bool>("Metrics:Enabled") && app.Configuration.GetValue<bool>("Metrics:EnablePrometheusEndpoint"))
+            app.MapPrometheusScrapingEndpoint();
+
         app.MapControllers();
 
         return app;
