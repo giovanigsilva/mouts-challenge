@@ -8,10 +8,17 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
-      - ConnectionStrings__DefaultConnection=Host=ambev.developerevaluation.database;Port=5432;Database=developer_evaluation;Username=developer;Password=ev@luAt10n
-      - Jwt__SecretKey=DevelopmentOnlySecretKeyForDeveloperStoreApi12345
-      - Jwt__Issuer=DeveloperStore
-      - Jwt__Audience=DeveloperStore
+      - ConnectionStrings__DefaultConnection=Host=ambev.developerevaluation.database;Port=5432;Database=developer_evaluation;Username=developerstore_app;Password=DevOnly_Pg_9fR!42sL#2026_Strong
+      - Jwt__SecretKey=DevOnly_JwtSecret_2026_pZ9!mQ4#vL8@rT2%DeveloperStore
+      - Jwt__Issuer=DeveloperStore.Development
+      - Jwt__Audience=DeveloperStore.Api
+      - Vault__Enabled=true
+      - Vault__Address=http://vault:8200
+      - Vault__Token=dev-root-token
+      - Vault__Mount=secret
+      - Vault__Path=developerstore/development
+      - Vault__TimeoutSeconds=5
+      - Vault__FailFastInProduction=true
       - Seq__Enabled=true
       - Seq__Url=http://seq:5341
       - Observability__EnableSeqFallback=true
@@ -26,6 +33,7 @@ services:
       - "8080:8080"
     depends_on:
       - ambev.developerevaluation.database
+      - vault
       - seq
 
   ambev.developerevaluation.database:
@@ -34,10 +42,22 @@ services:
 
     environment:
       POSTGRES_DB: developer_evaluation
-      POSTGRES_USER: developer
-      POSTGRES_PASSWORD: ev@luAt10n
+      POSTGRES_USER: developerstore_app
+      POSTGRES_PASSWORD: DevOnly_Pg_9fR!42sL#2026_Strong
     ports:
       - "5432:5432"
+    restart: unless-stopped
+
+  vault:
+    container_name: developerstore-vault
+    image: hashicorp/vault:1.16
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: dev-root-token
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    ports:
+      - "8200:8200"
+    cap_add:
+      - IPC_LOCK
     restart: unless-stopped
 
   seq:
