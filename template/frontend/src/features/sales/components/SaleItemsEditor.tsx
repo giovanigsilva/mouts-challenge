@@ -6,6 +6,7 @@ import type { SaleFormValues } from '@/features/sales/schemas/sale.schema'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
+import { useLanguage } from '@/shared/i18n/use-language'
 import { formatMoney } from '@/shared/lib/money'
 
 type SaleItemsEditorProps = {
@@ -16,8 +17,9 @@ type SaleItemsEditorProps = {
 }
 
 export function SaleItemsEditor({ control, register, errors, watchedItems }: SaleItemsEditorProps) {
+  const { t } = useLanguage()
   const { fields, append, remove } = useFieldArray({ control, name: 'items' })
-  const duplicatedProductMessage = 'Não é permitido repetir o mesmo produto na venda.'
+  const duplicatedProductMessage = t('duplicatedProduct')
   const duplicatedProductId = watchedItems
     .map((item) => item.productExternalId?.trim().toLowerCase())
     .find((productId, index, productIds) => productId && productIds.indexOf(productId) !== index)
@@ -29,8 +31,8 @@ export function SaleItemsEditor({ control, register, errors, watchedItems }: Sal
     <section className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-white">Itens</h2>
-          <p className="text-sm text-slate-400">O desconto é calculado automaticamente pelo domínio. O front exibe apenas uma prévia.</p>
+          <h2 className="text-lg font-semibold text-white">{t('items')}</h2>
+          <p className="text-sm text-slate-400">{t('discountPreviewDescription')}</p>
         </div>
         <Button
           type="button"
@@ -38,7 +40,7 @@ export function SaleItemsEditor({ control, register, errors, watchedItems }: Sal
           onClick={() => append({ productExternalId: '', productName: '', quantity: 1, unitPrice: 0 })}
         >
           <Plus className="h-4 w-4" />
-          Item
+          {t('item')}
         </Button>
       </div>
 
@@ -53,35 +55,35 @@ export function SaleItemsEditor({ control, register, errors, watchedItems }: Sal
             <div key={field.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
                 <div className="space-y-2 xl:col-span-2">
-                  <Label htmlFor={`items.${index}.productExternalId`}>ID externo do produto</Label>
+                  <Label htmlFor={`items.${index}.productExternalId`}>{t('productExternalId')}</Label>
                   <Input id={`items.${index}.productExternalId`} {...register(`items.${index}.productExternalId`)} />
                   {errors.items?.[index]?.productExternalId ? (
                     <p className="text-sm text-rose-300">{errors.items[index]?.productExternalId?.message}</p>
                   ) : null}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`items.${index}.productName`}>Produto</Label>
+                  <Label htmlFor={`items.${index}.productName`}>{t('product')}</Label>
                   <Input id={`items.${index}.productName`} {...register(`items.${index}.productName`)} />
                   {errors.items?.[index]?.productName ? <p className="text-sm text-rose-300">{errors.items[index]?.productName?.message}</p> : null}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`items.${index}.quantity`}>Quantidade</Label>
+                  <Label htmlFor={`items.${index}.quantity`}>{t('quantity')}</Label>
                   <Input id={`items.${index}.quantity`} type="number" min={1} max={20} {...register(`items.${index}.quantity`, { valueAsNumber: true })} />
                   {errors.items?.[index]?.quantity ? <p className="text-sm text-rose-300">{errors.items[index]?.quantity?.message}</p> : null}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`items.${index}.unitPrice`}>Preço unitário</Label>
+                  <Label htmlFor={`items.${index}.unitPrice`}>{t('unitPrice')}</Label>
                   <Input id={`items.${index}.unitPrice`} type="number" min={0} step="0.01" {...register(`items.${index}.unitPrice`, { valueAsNumber: true })} />
                   {errors.items?.[index]?.unitPrice ? <p className="text-sm text-rose-300">{errors.items[index]?.unitPrice?.message}</p> : null}
                 </div>
               </div>
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-300">
-                <span>Desconto: {preview.discountPercentage}%</span>
-                <span>Valor do desconto: {formatMoney(preview.discountAmount)}</span>
-                <span>Total do item: {formatMoney(preview.totalAmount)}</span>
+                <span>{t('discount')}: {preview.discountPercentage}%</span>
+                <span>{t('discountAmount')}: {formatMoney(preview.discountAmount)}</span>
+                <span>{t('itemTotal')}: {formatMoney(preview.totalAmount)}</span>
                 <Button type="button" variant="ghost" size="sm" onClick={() => remove(index)} disabled={fields.length === 1}>
                   <Trash2 className="h-4 w-4" />
-                  Remover
+                  {t('removeItem')}
                 </Button>
               </div>
             </div>

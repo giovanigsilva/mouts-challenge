@@ -5,11 +5,14 @@ import { Toaster } from 'sonner'
 
 import { queryClient } from '@/app/query-client'
 import { AuthProvider } from '@/features/auth/hooks/auth-provider'
+import { LanguageProvider } from '@/shared/i18n/language-context'
 
 export function AppProviders({ children }: PropsWithChildren) {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>{children}</AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>{children}</AuthProvider>
+      </LanguageProvider>
       <Toaster richColors position="top-right" />
       {import.meta.env.DEV ? <ReactQueryDevtools initialIsOpen={false} /> : null}
     </QueryClientProvider>

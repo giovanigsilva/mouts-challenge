@@ -5,28 +5,32 @@ import { NavLink } from 'react-router-dom'
 import { Badge } from '@/shared/components/ui/badge'
 import { Button } from '@/shared/components/ui/button'
 import { PageTransition } from '@/shared/components/feedback/PageTransition'
+import { LanguageSelector } from '@/shared/components/layout/LanguageSelector'
+import { useLanguage } from '@/shared/i18n/use-language'
 import { cn } from '@/shared/lib/cn'
 
 const navItems = [
-  { to: '/dashboard', label: 'Painel', icon: LayoutDashboard },
-  { to: '/sales', label: 'Vendas', icon: ShoppingCart },
-  { to: '/sales/new', label: 'Nova venda', icon: Plus },
-  { to: '/users/new', label: 'Criar usuário', icon: UserPlus },
-  { to: '/health', label: 'Saúde da API', icon: HeartPulse },
-]
+  { to: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard },
+  { to: '/sales', labelKey: 'sales', icon: ShoppingCart },
+  { to: '/sales/new', labelKey: 'newSale', icon: Plus },
+  { to: '/users/new', labelKey: 'createUser', icon: UserPlus },
+  { to: '/health', labelKey: 'apiHealth', icon: HeartPulse },
+] as const
 
 type AppShellProps = PropsWithChildren<{
   userLabel?: string
   onLogout?: () => void
 }>
 
-export function AppShell({ children, userLabel = 'Usuário autenticado', onLogout }: AppShellProps) {
+export function AppShell({ children, userLabel, onLogout }: AppShellProps) {
+  const { t } = useLanguage()
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 border-r border-white/10 bg-slate-950/70 p-4 backdrop-blur-2xl lg:block">
         <div className="mb-8 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-4">
           <p className="text-xs uppercase tracking-[0.24em] text-cyan-200">DeveloperStore</p>
-          <p className="mt-2 text-lg font-semibold text-white">Console de vendas</p>
+          <p className="mt-2 text-lg font-semibold text-white">{t('salesConsole')}</p>
         </div>
         <nav className="space-y-1">
           {navItems.map((item) => {
@@ -44,7 +48,7 @@ export function AppShell({ children, userLabel = 'Usuário autenticado', onLogou
                 }
               >
                 <Icon className="h-4 w-4" />
-                {item.label}
+                {t(item.labelKey)}
               </NavLink>
             )
           })}
@@ -56,16 +60,17 @@ export function AppShell({ children, userLabel = 'Usuário autenticado', onLogou
             <div className="flex items-center gap-3">
               <Activity className="h-5 w-5 text-cyan-300" />
               <div>
-                <p className="text-sm font-semibold text-white">API de vendas DeveloperStore</p>
+                <p className="text-sm font-semibold text-white">{t('apiTitle')}</p>
                 <p className="text-xs text-slate-500">http://localhost:8080</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Badge variant="success">Desenvolvimento</Badge>
-              <span className="hidden text-sm text-slate-300 sm:inline">{userLabel}</span>
+              <LanguageSelector />
+              <Badge variant="success">{t('environmentDevelopment')}</Badge>
+              <span className="hidden text-sm text-slate-300 sm:inline">{userLabel ?? t('authenticatedUser')}</span>
               <Button variant="ghost" size="sm" onClick={onLogout}>
                 <LogOut className="h-4 w-4" />
-                Sair
+                {t('logout')}
               </Button>
             </div>
           </div>

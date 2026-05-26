@@ -5,6 +5,7 @@ import { queryClient } from '@/app/query-client'
 import { authTokenStorage } from '@/shared/api/auth-token-storage'
 import { AuthContext } from '@/features/auth/hooks/auth-context'
 import type { AuthUser, LoginResponse } from '@/features/auth/types/auth.types'
+import { useLanguage } from '@/shared/i18n/use-language'
 
 const userKey = 'developerstore.user'
 
@@ -24,6 +25,7 @@ function readStoredUser() {
 }
 
 export function AuthProvider({ children }: PropsWithChildren) {
+  const { t } = useLanguage()
   const [user, setUser] = useState<AuthUser | null>(() => readStoredUser())
   const isAuthenticated = authTokenStorage.hasToken()
 
@@ -37,8 +39,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
     authTokenStorage.setToken(response.token)
     localStorage.setItem(userKey, JSON.stringify(nextUser))
     setUser(nextUser)
-    toast.success('Autenticação realizada com sucesso.')
-  }, [])
+    toast.success(t('loginSuccess'))
+  }, [t])
 
   const logout = useCallback(() => {
     authTokenStorage.clearToken()

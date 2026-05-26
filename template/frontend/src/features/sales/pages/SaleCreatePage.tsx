@@ -7,15 +7,17 @@ import type { SaleRequest } from '@/features/sales/types/sale.types'
 import type { NormalizedApiError } from '@/shared/api/api-error'
 import { ContentContainer } from '@/shared/components/layout/ContentContainer'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
+import { useLanguage } from '@/shared/i18n/use-language'
 
 export function SaleCreatePage() {
   const navigate = useNavigate()
   const mutation = useCreateSale()
+  const { t } = useLanguage()
 
   function handleSubmit(request: SaleRequest) {
     mutation.mutate(request, {
       onSuccess: (sale) => {
-        toast.success('Venda criada com sucesso.')
+        toast.success(t('saleCreated'))
         navigate(`/sales/${sale.id}`)
       },
       onError: (error) => toast.error((error as unknown as NormalizedApiError).message),
@@ -25,10 +27,10 @@ export function SaleCreatePage() {
   return (
     <ContentContainer>
       <PageHeader
-        title="Nova venda"
-        description="Informe cliente, filial e itens. Descontos e totais são calculados novamente pelo backend."
+        title={t('newSale')}
+        description={t('saleCreateDescription')}
       />
-      <SaleForm submitLabel="Criar venda" isSubmitting={mutation.isPending} onSubmit={handleSubmit} />
+      <SaleForm submitLabel={t('createSale')} isSubmitting={mutation.isPending} onSubmit={handleSubmit} />
     </ContentContainer>
   )
 }

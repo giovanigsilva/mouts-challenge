@@ -1,14 +1,15 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 
 import { SaleItemsEditor } from '@/features/sales/components/SaleItemsEditor'
-import { saleSchema, type SaleFormValues } from '@/features/sales/schemas/sale.schema'
+import { createSaleSchema, type SaleFormValues } from '@/features/sales/schemas/sale.schema'
 import type { Sale, SaleRequest } from '@/features/sales/types/sale.types'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
+import { useLanguage } from '@/shared/i18n/use-language'
 
 type SaleFormProps = {
   sale?: Sale
@@ -19,6 +20,8 @@ type SaleFormProps = {
 }
 
 export function SaleForm({ sale, isSubmitting = false, isSubmitDisabled = false, submitLabel, onSubmit }: SaleFormProps) {
+  const { t } = useLanguage()
+  const saleSchema = useMemo(() => createSaleSchema(t), [t])
   const {
     register,
     control,
@@ -47,22 +50,22 @@ export function SaleForm({ sale, isSubmitting = false, isSubmitDisabled = false,
   return (
     <form className="space-y-6" onSubmit={handleSubmit(submit)}>
       <div className="grid gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 md:grid-cols-2">
-        <Field label="Número da venda" id="saleNumber" error={errors.saleNumber?.message}>
+        <Field label={t('saleNumber')} id="saleNumber" error={errors.saleNumber?.message}>
           <Input id="saleNumber" {...register('saleNumber')} />
         </Field>
-        <Field label="Data da venda" id="saleDate" error={errors.saleDate?.message}>
+        <Field label={t('saleDate')} id="saleDate" error={errors.saleDate?.message}>
           <Input id="saleDate" type="datetime-local" {...register('saleDate')} />
         </Field>
-        <Field label="ID externo do cliente" id="customerExternalId" error={errors.customerExternalId?.message}>
+        <Field label={t('customerExternalId')} id="customerExternalId" error={errors.customerExternalId?.message}>
           <Input id="customerExternalId" {...register('customerExternalId')} />
         </Field>
-        <Field label="Cliente" id="customerName" error={errors.customerName?.message}>
+        <Field label={t('customer')} id="customerName" error={errors.customerName?.message}>
           <Input id="customerName" {...register('customerName')} />
         </Field>
-        <Field label="ID externo da filial" id="branchExternalId" error={errors.branchExternalId?.message}>
+        <Field label={t('branchExternalId')} id="branchExternalId" error={errors.branchExternalId?.message}>
           <Input id="branchExternalId" {...register('branchExternalId')} />
         </Field>
-        <Field label="Filial" id="branchName" error={errors.branchName?.message}>
+        <Field label={t('branch')} id="branchName" error={errors.branchName?.message}>
           <Input id="branchName" {...register('branchName')} />
         </Field>
       </div>

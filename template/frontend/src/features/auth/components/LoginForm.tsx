@@ -1,23 +1,27 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { Loader2, ShieldCheck } from 'lucide-react'
+import { useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 
 import { login } from '@/features/auth/api/auth.api'
 import { useAuth } from '@/features/auth/hooks/use-auth'
-import { loginSchema, type LoginFormValues } from '@/features/auth/schemas/auth.schema'
+import { createLoginSchema, type LoginFormValues } from '@/features/auth/schemas/auth.schema'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 import type { NormalizedApiError } from '@/shared/api/api-error'
 import { recaptchaConfig } from '@/shared/security/recaptcha/recaptcha.config'
 import { useRecaptcha } from '@/shared/security/recaptcha/use-recaptcha'
+import { useLanguage } from '@/shared/i18n/use-language'
 
 export function LoginForm() {
   const { applyLogin } = useAuth()
   const navigate = useNavigate()
   const { executeRecaptcha } = useRecaptcha()
+  const { t } = useLanguage()
+  const loginSchema = useMemo(() => createLoginSchema(t), [t])
   const {
     register,
     handleSubmit,
@@ -54,13 +58,13 @@ export function LoginForm() {
   return (
     <form className="space-y-5" onSubmit={handleSubmit(submit)}>
       <div className="space-y-2">
-        <Label htmlFor="email">E-mail</Label>
+        <Label htmlFor="email">{t('email')}</Label>
         <Input id="email" type="email" autoComplete="email" placeholder="admin@developerstore.com" {...register('email')} />
         {errors.email ? <p className="text-sm text-rose-300">{errors.email.message}</p> : null}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password">Senha</Label>
+        <Label htmlFor="password">{t('password')}</Label>
         <Input id="password" type="password" autoComplete="current-password" placeholder="Senha@123456" {...register('password')} />
         {errors.password ? <p className="text-sm text-rose-300">{errors.password.message}</p> : null}
       </div>
@@ -78,16 +82,14 @@ export function LoginForm() {
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="font-semibold text-white">reCAPTCHA v3 simulado</p>
+              <p className="font-semibold text-white">{t('recaptchaTitle')}</p>
               <span className="rounded-full border border-white/10 bg-white/10 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-cyan-100">
-                {recaptchaConfig.enabled ? 'Ativo' : 'Desativado'}
+                {recaptchaConfig.enabled ? t('active') : t('disabled')}
               </span>
             </div>
-            <p className="mt-1 text-xs leading-5 text-slate-300">
-              Proteção anti-bot local para login. Quando ativa, gera token por action sem usar Google real.
-            </p>
+            <p className="mt-1 text-xs leading-5 text-slate-300">{t('recaptchaDescription')}</p>
             <p className="mt-2 text-[11px] uppercase tracking-wide text-cyan-200">
-              Provedor: {recaptchaConfig.provider} | Ação: {recaptchaConfig.loginAction}
+              {t('provider')}: {recaptchaConfig.provider} | {t('action')}: {recaptchaConfig.loginAction}
             </p>
           </div>
         </div>
@@ -96,10 +98,10 @@ export function LoginForm() {
       <div className="flex flex-col gap-3 sm:flex-row">
         <Button type="submit" className="flex-1" disabled={mutation.isPending}>
           {mutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-          {mutation.isPending ? 'Autenticando...' : 'Entrar'}
+          {mutation.isPending ? t('authenticating') : t('enter')}
         </Button>
         <Button type="button" variant="secondary" onClick={fillDemoCredentials}>
-          Usar demo
+          {t('useDemo')}
         </Button>
       </div>
     </form>

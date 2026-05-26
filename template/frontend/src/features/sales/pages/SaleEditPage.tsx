@@ -7,17 +7,19 @@ import type { SaleRequest } from '@/features/sales/types/sale.types'
 import type { NormalizedApiError } from '@/shared/api/api-error'
 import { ContentContainer } from '@/shared/components/layout/ContentContainer'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
+import { useLanguage } from '@/shared/i18n/use-language'
 
 export function SaleEditPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
   const saleQuery = useSale(id)
   const mutation = useUpdateSale(id)
+  const { t } = useLanguage()
 
   function handleSubmit(request: SaleRequest) {
     mutation.mutate(request, {
       onSuccess: (sale) => {
-        toast.success('Venda atualizada com sucesso.')
+        toast.success(t('saleUpdated'))
         navigate(`/sales/${sale.id}`)
       },
       onError: (error) => toast.error((error as unknown as NormalizedApiError).message),
@@ -25,7 +27,7 @@ export function SaleEditPage() {
   }
 
   if (saleQuery.isLoading) {
-    return <ContentContainer>Carregando venda...</ContentContainer>
+    return <ContentContainer>{t('loadingSale')}</ContentContainer>
   }
 
   if (saleQuery.error) {
@@ -33,26 +35,26 @@ export function SaleEditPage() {
   }
 
   if (!saleQuery.data) {
-    return <ContentContainer>Venda não encontrada.</ContentContainer>
+    return <ContentContainer>{t('saleNotFound')}</ContentContainer>
   }
 
   if (saleQuery.data.isCancelled) {
-    return <ContentContainer>Venda cancelada não pode ser editada.</ContentContainer>
+    return <ContentContainer>{t('cancelledSaleCannotEdit')}</ContentContainer>
   }
 
   const hasCancelledItem = saleQuery.data.items.some((item) => item.isCancelled)
 
   return (
     <ContentContainer>
-      <PageHeader title="Editar venda" description="Atualize os dados da venda. O backend recalcula descontos e totais." />
+      <PageHeader title={t('editSale')} description={t('editSaleDescription')} />
       {hasCancelledItem ? (
         <div className="mb-4 rounded-2xl border border-amber-300/20 bg-amber-300/10 p-4 text-sm text-amber-100">
-          Item cancelado não pode ser editado.
+          {t('cancelledItemCannotEdit')}
         </div>
       ) : null}
       <SaleForm
         sale={saleQuery.data}
-        submitLabel="Salvar alterações"
+        submitLabel={t('saveChanges')}
         isSubmitting={mutation.isPending}
         isSubmitDisabled={hasCancelledItem}
         onSubmit={handleSubmit}

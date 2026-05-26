@@ -1,12 +1,20 @@
 import { z } from 'zod'
 
-export const createUserSchema = z.object({
-  username: z.string().min(1, 'Informe o nome.'),
-  email: z.string().email('Informe um e-mail válido.'),
-  phone: z.string().min(8, 'Informe o telefone.'),
-  password: z.string().min(6, 'Informe uma senha com pelo menos 6 caracteres.'),
-  status: z.number().min(1, 'Selecione o status.'),
-  role: z.number().min(1, 'Selecione o perfil.'),
-})
+import { translations, type TranslationKey } from '@/shared/i18n/translations'
 
-export type CreateUserFormValues = z.infer<typeof createUserSchema>
+type Translate = (key: TranslationKey) => string
+
+export function createUserSchema(t: Translate) {
+  return z.object({
+    username: z.string().min(1, t('validationNameRequired')),
+    email: z.string().email(t('validationEmailValid')),
+    phone: z.string().min(8, t('validationPhoneRequired')),
+    password: z.string().min(6, t('validationPasswordMin')),
+    status: z.number().min(1, t('validationStatusRequired')),
+    role: z.number().min(1, t('validationRoleRequired')),
+  })
+}
+
+export const createUserSchemaPtBr = createUserSchema((key) => translations['pt-BR'][key])
+
+export type CreateUserFormValues = z.infer<ReturnType<typeof createUserSchema>>

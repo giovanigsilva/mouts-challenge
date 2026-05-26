@@ -6,6 +6,7 @@ import { authTokenStorage } from '@/shared/api/auth-token-storage'
 import { createCorrelationId } from '@/shared/api/correlation-id'
 import { env } from '@/shared/config/env'
 import type { ApiEnvelope } from '@/shared/types/api-response'
+import { translations, type Language } from '@/shared/i18n/translations'
 
 export const apiClient = axios.create({
   baseURL: env.apiBaseUrl,
@@ -34,7 +35,7 @@ apiClient.interceptors.response.use(
 
     if (normalized.status === 401) {
       authTokenStorage.clearToken()
-      toast.error('Sessão expirada ou token inválido.')
+      toast.error(getSessionExpiredMessage())
 
       if (window.location.pathname !== '/login') {
         window.location.assign('/login')
@@ -47,8 +48,22 @@ apiClient.interceptors.response.use(
 
 export function unwrapApiData<T>(envelope: ApiEnvelope<T>): T {
   if (!envelope.success) {
-    throw new Error(envelope.message || 'A API retornou uma resposta sem sucesso.')
+    throw new Error(envelope.message || getUnsuccessfulResponseMessage())
   }
 
   return envelope.data as T
+}
+
+function getCurrentLanguage(): Language {
+  const stored = localStorage.getItem('developerstore.language')
+
+  return stored === 'en' || stored === 'es' || stored === 'pt-BR' ? stored : 'pt-BR'
+}
+
+function getSessionExpiredMessage() {
+  return translations[getCurrentLanguage()].error401
+}
+
+function getUnsuccessfulResponseMessage() {
+  return translations[getCurrentLanguage()].unsuccessfulApiResponse
 }
