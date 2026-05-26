@@ -17,6 +17,8 @@ Este README foi escrito para o avaliador clonar o repositorio e inicializar a AP
 - [Ambientes](#ambientes)
 - [Segredos e Vault local](#segredos-e-vault-local)
 - [Observabilidade](#observabilidade)
+- [Stack enterprise local](#stack-enterprise-local)
+- [Testes de carga com k6](#testes-de-carga-com-k6)
 - [Troubleshooting](#troubleshooting)
 
 ## O que esta implementado
@@ -38,9 +40,12 @@ Este README foi escrito para o avaliador clonar o repositorio e inicializar a AP
 - Seq local em `http://localhost:5341`.
 - Datadog Agent configurado via Docker.
 - Vault local em modo dev para segredos de Development.
+- Redis opcional para cache de leitura no profile enterprise.
+- Prometheus, Grafana, postgres-exporter e redis-exporter opcionais no profile enterprise.
+- k6 opcional no profile loadtest.
 - Separacao de ambientes: `Development`, `Uat` e `Production`.
 
-Fora do escopo desta prova: Redis real, Azure Service Bus real, Azure Functions reais, Azure Key Vault real e blue-green real.
+Fora do escopo desta prova: Azure Service Bus real, Azure Functions reais, Azure Key Vault real e blue-green real.
 
 ## Pre-requisitos
 
@@ -538,6 +543,101 @@ requestPath like '%sales%'
 saleNumber = 'SALE-2026-000001'
 ```
 
+## Stack enterprise local
+
+O modo simples continua funcionando com:
+
+```powershell
+docker compose up --build -d
+```
+
+O modo enterprise local adiciona Redis, Prometheus, Grafana, postgres-exporter e redis-exporter. Para ativar cache Redis na API, defina `CACHE_ENABLED=true` antes de subir a stack:
+
+```powershell
+$env:CACHE_ENABLED="true"
+docker compose --profile enterprise up --build -d
+```
+
+Validar endpoints:
+
+```powershell
+curl.exe -i http://localhost:8080/health/cache
+curl.exe -i http://localhost:8080/health/metrics
+curl.exe -i http://localhost:8080/metrics
+```
+
+URLs:
+
+```text
+Prometheus: http://localhost:9090
+Grafana:    http://localhost:3000
+Redis:      localhost:6379
+```
+
+Grafana local:
+
+```text
+usuario: admin
+senha:   developerstore
+```
+
+Dashboards provisionados:
+
+- DeveloperStore API.
+- DeveloperStore Sales.
+- DeveloperStore Cache.
+- DeveloperStore PostgreSQL.
+
+Cache Redis:
+
+- Cacheia `GET /api/sales/{id}`.
+- Cacheia `GET /api/sales`.
+- Escritas invalidam detalhe da venda e incrementam a versao das listas.
+- Se Redis falhar, a API consulta PostgreSQL e registra warning.
+
+Para desligar o cache e voltar ao modo simples:
+
+```powershell
+Remove-Item Env:\CACHE_ENABLED -ErrorAction SilentlyContinue
+docker compose up --build -d
+```
+
+## Testes de carga com k6
+
+Scripts:
+
+```text
+tests/load/k6-smoke.js
+tests/load/k6-sales-read.js
+tests/load/k6-sales-write.js
+tests/load/k6-sales-mixed.js
+```
+
+Rodar smoke:
+
+```powershell
+docker compose --profile loadtest run --rm k6 run /scripts/k6-smoke.js
+```
+
+Rodar leitura:
+
+```powershell
+docker compose --profile loadtest run --rm k6 run /scripts/k6-sales-read.js
+```
+
+Rodar misto com token JWT:
+
+```powershell
+$env:K6_TOKEN="<TOKEN_JWT>"
+docker compose --profile loadtest run --rm k6 run /scripts/k6-sales-mixed.js
+```
+
+Variaveis:
+
+- `K6_BASE_URL`: URL base da API. Padrao no Docker: `http://ambev.developerevaluation.webapi:8080`.
+- `K6_TOKEN`: token JWT para endpoints protegidos.
+- `K6_SALE_ID`: id de venda para teste de detalhe.
+
 ## Estrutura principal
 
 ```text
@@ -562,8 +662,12 @@ scripts
 - [Seguranca](docs/security.md)
 - [Segredos](docs/secrets.md)
 - [Observabilidade](docs/observability.md)
+- [Observabilidade local](docs/observability-local.md)
 - [Logs](docs/logging.md)
 - [Resiliencia](docs/resilience.md)
+- [Cache](docs/cache.md)
+- [Performance](docs/performance.md)
+- [Testes de carga](docs/load-testing.md)
 
 ## Troubleshooting
 
