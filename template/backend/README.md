@@ -23,6 +23,7 @@ Este README foi escrito para o avaliador clonar o repositorio e inicializar a AP
 - [Stack enterprise local](#stack-enterprise-local)
 - [Testes de carga com k6](#testes-de-carga-com-k6)
 - [Frontend React](#frontend-react)
+- [Idiomas do frontend](#idiomas-do-frontend)
 - [Troubleshooting](#troubleshooting)
 
 ## O que esta implementado
@@ -52,6 +53,7 @@ Este README foi escrito para o avaliador clonar o repositorio e inicializar a AP
 - IoC centralizado em `src/Ambev.DeveloperEvaluation.IoC/ModuleInitializers`.
 - Separacao de ambientes: `Development`, `Uat` e `Production`.
 - reCAPTCHA v3 simulado para login e criacao de usuario, desabilitado por padrao em Development.
+- Frontend React com seletor de idioma em `PT-BR`, `EN` e `ES`.
 
 Fora do escopo desta prova: Azure Service Bus real, Azure Functions reais, Azure Key Vault real e blue-green real.
 
@@ -217,7 +219,16 @@ DbSet<Sale> Sales
 DbSet<SaleItem> SaleItems
 ```
 
-Todas as entidades persistidas herdam de `BaseEntity` e possuem os campos comuns:
+Mapeamentos EF Core confirmados:
+
+```text
+src/Ambev.DeveloperEvaluation.ORM/Mapping/BaseEntityConfigurationExtensions.cs
+src/Ambev.DeveloperEvaluation.ORM/Mapping/UserConfiguration.cs
+src/Ambev.DeveloperEvaluation.ORM/Mapping/SaleConfiguration.cs
+src/Ambev.DeveloperEvaluation.ORM/Mapping/SaleItemConfiguration.cs
+```
+
+Todas as entidades persistidas herdam de `BaseEntity` e usam o mesmo mapeamento comum:
 
 ```text
 Id uuid PK default gen_random_uuid()
@@ -225,9 +236,69 @@ CreatedAt timestamp with time zone not null
 UpdatedAt timestamp with time zone null
 ```
 
+### Visao relacional
+
+```mermaid
+erDiagram
+    Users {
+        uuid Id PK
+        varchar Username
+        varchar Password
+        varchar Phone
+        varchar Email
+        varchar Status
+        varchar Role
+        timestamptz CreatedAt
+        timestamptz UpdatedAt
+    }
+
+    Sales {
+        uuid Id PK
+        varchar SaleNumber UK
+        timestamptz SaleDate
+        uuid CustomerExternalId
+        varchar CustomerName
+        uuid BranchExternalId
+        varchar BranchName
+        numeric TotalAmount
+        boolean IsCancelled
+        timestamptz CreatedAt
+        timestamptz UpdatedAt
+    }
+
+    SaleItems {
+        uuid Id PK
+        uuid SaleId FK
+        uuid ProductExternalId
+        varchar ProductName
+        int Quantity
+        numeric UnitPrice
+        numeric DiscountPercentage
+        numeric DiscountAmount
+        numeric TotalAmount
+        boolean IsCancelled
+        timestamptz CreatedAt
+        timestamptz UpdatedAt
+    }
+
+    Sales ||--o{ SaleItems : possui
+```
+
+### Correlacoes entre dominio e banco
+
+| Dominio | Tabela | Relacionamento | Observacao |
+| --- | --- | --- | --- |
+| `User` | `Users` | Sem FK para vendas | Usado por Auth/Users. A autenticacao gera JWT, mas vendas nao armazenam `UserId`. |
+| `Sale` | `Sales` | Raiz do agregado | Armazena cabecalho da venda e snapshots de cliente e filial. |
+| `SaleItem` | `SaleItems` | `SaleItems.SaleId -> Sales.Id` | Itens pertencem a uma venda. O delete da venda remove os itens por cascade. |
+| Customer externo | Colunas em `Sales` | Sem tabela local | `CustomerExternalId` e `CustomerName` sao snapshot denormalizado. |
+| Branch externa | Colunas em `Sales` | Sem tabela local | `BranchExternalId` e `BranchName` sao snapshot denormalizado. |
+| Product externo | Colunas em `SaleItems` | Sem tabela local | `ProductExternalId` e `ProductName` sao snapshot denormalizado. |
+| Eventos de dominio | Nao persistidos | Sem tabela | `SaleCreated`, `SaleModified`, `SaleCancelled` e `ItemCancelled` sao registrados em log estruturado. |
+
 ### Users
 
-Tabela de usuarios usada por Auth e Users.
+Tabela de usuarios usada por Auth e Users. O mapeamento EF converte `Status` e `Role` para string no banco.
 
 ```text
 Users
@@ -241,6 +312,20 @@ Status varchar(20) not null
 Role varchar(20) not null
 CreatedAt timestamp with time zone not null
 UpdatedAt timestamp with time zone null
+```
+
+Mapeamento:
+
+```text
+User.Id        -> Users.Id
+User.Username  -> Users.Username
+User.Password  -> Users.Password
+User.Phone     -> Users.Phone
+User.Email     -> Users.Email
+User.Status    -> Users.Status, enum convertido para string
+User.Role      -> Users.Role, enum convertido para string
+User.CreatedAt -> Users.CreatedAt
+User.UpdatedAt -> Users.UpdatedAt
 ```
 
 ### Sales
@@ -273,6 +358,24 @@ IX_Sales_SaleDate
 IX_Sales_IsCancelled
 ```
 
+Mapeamento:
+
+```text
+Sale.Id                 -> Sales.Id
+Sale.SaleNumber         -> Sales.SaleNumber
+Sale.SaleDate           -> Sales.SaleDate
+Sale.CustomerExternalId -> Sales.CustomerExternalId
+Sale.CustomerName       -> Sales.CustomerName
+Sale.BranchExternalId   -> Sales.BranchExternalId
+Sale.BranchName         -> Sales.BranchName
+Sale.TotalAmount        -> Sales.TotalAmount
+Sale.IsCancelled        -> Sales.IsCancelled
+Sale.CreatedAt          -> Sales.CreatedAt
+Sale.UpdatedAt          -> Sales.UpdatedAt
+Sale.Items              -> SaleItems via SaleItems.SaleId
+Sale.DomainEvents       -> ignorado pelo EF, nao vira coluna
+```
+
 ### SaleItems
 
 Tabela de itens da venda.
@@ -301,6 +404,23 @@ IX_SaleItems_SaleId
 IX_SaleItems_ProductExternalId
 ```
 
+Mapeamento:
+
+```text
+SaleItem.Id                 -> SaleItems.Id
+SaleItem.SaleId             -> SaleItems.SaleId
+SaleItem.ProductExternalId  -> SaleItems.ProductExternalId
+SaleItem.ProductName        -> SaleItems.ProductName
+SaleItem.Quantity           -> SaleItems.Quantity
+SaleItem.UnitPrice          -> SaleItems.UnitPrice
+SaleItem.DiscountPercentage -> SaleItems.DiscountPercentage
+SaleItem.DiscountAmount     -> SaleItems.DiscountAmount
+SaleItem.TotalAmount        -> SaleItems.TotalAmount
+SaleItem.IsCancelled        -> SaleItems.IsCancelled
+SaleItem.CreatedAt          -> SaleItems.CreatedAt
+SaleItem.UpdatedAt          -> SaleItems.UpdatedAt
+```
+
 Relacionamento:
 
 ```text
@@ -315,6 +435,7 @@ Observacoes importantes:
 - Nao existem tabelas `Customers`, `Branches` ou `Products`.
 - Sales usa snapshot denormalizado por external identity: `CustomerExternalId`, `CustomerName`, `BranchExternalId`, `BranchName`, `ProductExternalId` e `ProductName`.
 - Eventos de dominio existem no dominio, mas nao sao persistidos em tabela.
+- Cache Redis, metricas, logs, health checks e reCAPTCHA nao criam tabelas nesta implementacao.
 
 Prompt pronto para gerar um DER:
 
@@ -875,12 +996,13 @@ Stack usada:
 - React, TypeScript e Vite.
 - React Router para rotas publicas e protegidas.
 - TanStack Query para server state, cache e invalidacao de Sales.
-- React Hook Form + Zod para formularios e validacoes em PT-BR.
+- React Hook Form + Zod para formularios e validacoes.
 - Tailwind CSS com componentes no estilo shadcn/ui.
 - Motion for React para transicoes suaves.
 - Axios com client tipado, JWT Bearer e `X-Correlation-Id`.
 - Sonner para notificacoes.
 - Lucide React para icones.
+- Seletor de idioma com `PT-BR`, `EN` e `ES`.
 
 Rodar backend:
 
@@ -966,6 +1088,50 @@ Fluxo de avaliacao:
 6. Consulte dashboard e health page.
 
 O backend ja permite CORS para `http://localhost:5173` em Development.
+
+## Idiomas do frontend
+
+O frontend possui uma barra de idioma visivel na tela de login e no topo da area autenticada.
+
+Idiomas disponiveis:
+
+```text
+PT-BR: portugues do Brasil
+EN: ingles
+ES: espanhol
+```
+
+Implementacao:
+
+```text
+../frontend/src/shared/components/layout/LanguageSelector.tsx
+../frontend/src/shared/i18n/translations.ts
+../frontend/src/shared/i18n/language-context.tsx
+../frontend/src/shared/i18n/use-language.ts
+```
+
+Comportamento:
+
+- O idioma padrao e `PT-BR`.
+- A selecao fica salva no `localStorage` com a chave `developerstore.language`.
+- O seletor altera textos do menu, login, dashboard, health, usuarios, vendas, validacoes, mensagens de erro e notificacoes.
+- O backend continua expondo a API em portugues no Swagger; a troca de idioma e uma responsabilidade do frontend.
+
+Mapeamento visual:
+
+| Botao | Idioma aplicado |
+| --- | --- |
+| `PT-BR` | Portugues do Brasil |
+| `EN` | Ingles |
+| `ES` | Espanhol |
+
+Para validar:
+
+1. Acesse `http://localhost:5173`.
+2. Use a barra no canto superior direito da tela.
+3. Clique em `EN` para exibir a interface em ingles.
+4. Clique em `ES` para exibir a interface em espanhol.
+5. Clique em `PT-BR` para voltar ao portugues.
 
 ## Estrutura principal
 

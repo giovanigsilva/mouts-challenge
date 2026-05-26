@@ -6,9 +6,24 @@ import { ContentContainer } from '@/shared/components/layout/ContentContainer'
 import { PageHeader } from '@/shared/components/layout/PageHeader'
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
+import { useLanguage } from '@/shared/i18n/use-language'
+import type { TranslationKey } from '@/shared/i18n/translations'
 
 export function HealthPage() {
   const queries = useHealthStatus()
+  const { t } = useLanguage()
+
+  function translateStatus(status: string) {
+    if (status === 'Healthy') {
+      return t('healthy')
+    }
+
+    if (status === 'Unavailable') {
+      return t('unavailable')
+    }
+
+    return t('degraded')
+  }
 
   function refresh() {
     queries.forEach((query) => void query.refetch())
@@ -17,12 +32,12 @@ export function HealthPage() {
   return (
     <ContentContainer>
       <PageHeader
-        title="Saúde da API"
-        description="Consulta endpoints de health do backend e mede o tempo de resposta observado pelo frontend."
+        title={t('apiHealth')}
+        description={t('healthDescription')}
         actions={
           <Button type="button" variant="secondary" onClick={refresh}>
             <RefreshCw className="h-4 w-4" />
-            Atualizar
+            {t('update')}
           </Button>
         }
       />
@@ -33,21 +48,21 @@ export function HealthPage() {
           return (
             <Card key={result?.key ?? index}>
               <CardHeader>
-                <CardTitle>{result?.label ?? 'Saúde'}</CardTitle>
+                <CardTitle>{result?.label ? t(result.label as TranslationKey) : t('apiHealth')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {query.isLoading ? <p className="text-sm text-slate-400">Carregando...</p> : null}
+                {query.isLoading ? <p className="text-sm text-slate-400">{t('loading')}</p> : null}
                 {result ? (
                   <>
                     <HealthIndicator status={result.status} />
-                    <p className="text-sm text-slate-400">Serviço monitorado: {result.path}</p>
-                    {result.data?.serviceName ? <p className="text-sm text-slate-400">Aplicação: {result.data.serviceName}</p> : null}
-                    <p className="text-sm text-slate-400">Tempo: {result.elapsedMs} ms</p>
-                    <p className="break-all text-xs text-slate-500">ID de correlação: {result.correlationId ?? '-'}</p>
+                    <p className="text-sm text-slate-400">{t('monitoredService')}: {result.path}</p>
+                    {result.data?.serviceName ? <p className="text-sm text-slate-400">{t('application')}: {result.data.serviceName}</p> : null}
+                    <p className="text-sm text-slate-400">{t('time')}: {result.elapsedMs} ms</p>
+                    <p className="break-all text-xs text-slate-500">{t('correlationId')}: {result.correlationId ?? '-'}</p>
                     {result.data?.healthChecks?.map((check) => (
                       <div key={check.name} className="rounded-xl bg-white/5 p-3 text-sm text-slate-300">
                         <p className="font-medium text-white">{check.name}</p>
-                        <p>{check.status}</p>
+                        <p>{translateStatus(check.status)}</p>
                         {check.description ? <p className="text-slate-500">{check.description}</p> : null}
                       </div>
                     ))}

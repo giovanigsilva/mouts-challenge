@@ -1,6 +1,7 @@
 import { ShoppingCart } from 'lucide-react'
 
 import { GlassCard } from '@/shared/components/glass/GlassCard'
+import { useLanguage } from '@/shared/i18n/use-language'
 import { formatMoney } from '@/shared/lib/money'
 
 type SaleTotalsCardProps = {
@@ -9,6 +10,8 @@ type SaleTotalsCardProps = {
 }
 
 export function SaleTotalsCard({ totalAmount, itemsCount }: SaleTotalsCardProps) {
+  const { t } = useLanguage()
+
   return (
     <GlassCard className="p-5">
       <div className="flex items-center gap-3">
@@ -16,7 +19,7 @@ export function SaleTotalsCard({ totalAmount, itemsCount }: SaleTotalsCardProps)
           <ShoppingCart className="h-5 w-5" />
         </div>
         <div>
-          <p className="text-sm text-slate-400">Total da venda</p>
+          <p className="text-sm text-slate-400">{t('saleTotal')}</p>
           <p className="text-2xl font-semibold text-white">{formatMoney(totalAmount)}</p>
           <p className="text-xs text-slate-500">{itemsCount} item(ns)</p>
         </div>

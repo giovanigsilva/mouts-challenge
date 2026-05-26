@@ -12,6 +12,7 @@ import { PageHeader } from '@/shared/components/layout/PageHeader'
 import { Button } from '@/shared/components/ui/button'
 import type { NormalizedApiError } from '@/shared/api/api-error'
 import { useConfirmDialog } from '@/shared/hooks/use-confirm-dialog'
+import { useLanguage } from '@/shared/i18n/use-language'
 
 const initialFilters: SalesFiltersType = {
   page: 1,
@@ -25,26 +26,27 @@ export function SalesListPage() {
   const cancelMutation = useCancelSale()
   const deleteMutation = useDeleteSale()
   const confirmDialog = useConfirmDialog()
+  const { t } = useLanguage()
 
   function handleCancel(sale: Sale) {
-    if (!confirmDialog.confirm(`Cancelar a venda ${sale.saleNumber}?`)) {
+    if (!confirmDialog.confirm(t('confirmCancelSale', { saleNumber: sale.saleNumber }))) {
       return
     }
 
     cancelMutation.mutate(sale.id, {
-      onSuccess: () => toast.success('Venda cancelada com sucesso.'),
+      onSuccess: () => toast.success(t('saleCancelled')),
       onError: (error) => toast.error((error as unknown as NormalizedApiError).message),
     })
   }
 
   function handleDelete(sale: Sale) {
-    if (!confirmDialog.confirm(`Remover definitivamente a venda ${sale.saleNumber}?`)) {
+    if (!confirmDialog.confirm(t('confirmDeleteSale', { saleNumber: sale.saleNumber }))) {
       return
     }
 
     deleteMutation.mutate(sale.id, {
       onSuccess: () => {
-        toast.success('Venda removida com sucesso.')
+        toast.success(t('saleRemoved'))
         navigate('/sales')
       },
       onError: (error) => toast.error((error as unknown as NormalizedApiError).message),
@@ -54,13 +56,13 @@ export function SalesListPage() {
   return (
     <ContentContainer>
       <PageHeader
-        title="Vendas"
-        description="Liste, filtre e gerencie vendas consumindo diretamente a API DeveloperStore."
+        title={t('sales')}
+        description={t('salesListDescription')}
         actions={
           <Button asChild>
             <Link to="/sales/new">
               <Plus className="h-4 w-4" />
-              Nova venda
+              {t('newSale')}
             </Link>
           </Button>
         }
@@ -69,7 +71,7 @@ export function SalesListPage() {
       <div className="space-y-5">
         <SalesFilters filters={filters} onChange={setFilters} />
 
-        {salesQuery.isLoading ? <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-slate-400">Carregando vendas...</div> : null}
+        {salesQuery.isLoading ? <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-slate-400">{t('loadingSales')}</div> : null}
         {salesQuery.error ? (
           <div className="rounded-2xl border border-rose-300/20 bg-rose-300/10 p-5 text-rose-100">
             {(salesQuery.error as unknown as NormalizedApiError).message}
@@ -80,7 +82,7 @@ export function SalesListPage() {
         {salesQuery.data ? (
           <div className="flex items-center justify-between text-sm text-slate-400">
             <span>
-              Página {salesQuery.data.currentPage} de {salesQuery.data.totalPages || 1}. Total: {salesQuery.data.totalCount}
+              {t('page')} {salesQuery.data.currentPage} {t('of')} {salesQuery.data.totalPages || 1}. {t('total')}: {salesQuery.data.totalCount}
             </span>
             <div className="flex gap-2">
               <Button
@@ -89,7 +91,7 @@ export function SalesListPage() {
                 disabled={filters.page <= 1}
                 onClick={() => setFilters((current) => ({ ...current, page: current.page - 1 }))}
               >
-                Anterior
+                {t('previous')}
               </Button>
               <Button
                 variant="secondary"
@@ -97,7 +99,7 @@ export function SalesListPage() {
                 disabled={filters.page >= salesQuery.data.totalPages}
                 onClick={() => setFilters((current) => ({ ...current, page: current.page + 1 }))}
               >
-                Próxima
+                {t('next')}
               </Button>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import axios, { type AxiosError } from 'axios'
 
 import type { ApiEnvelope } from '@/shared/types/api-response'
+import { translations, type Language, type TranslationKey } from '@/shared/i18n/translations'
 
 export type NormalizedApiError = {
   status?: number
@@ -9,21 +10,21 @@ export type NormalizedApiError = {
   errors: string[]
 }
 
-const defaultMessages: Record<number, string> = {
-  400: 'A requisição possui dados inválidos.',
-  401: 'Sessão expirada ou token inválido.',
-  403: 'Você não possui permissão para executar esta operação.',
-  404: 'Recurso não encontrado.',
-  409: 'Conflito ou violação de regra de negócio.',
-  429: 'Muitas requisições em um curto período. Tente novamente mais tarde.',
-  499: 'A requisição foi cancelada.',
-  500: 'Ocorreu um erro interno na API.',
+const defaultMessageKeys: Record<number, TranslationKey> = {
+  400: 'error400',
+  401: 'error401',
+  403: 'error403',
+  404: 'error404',
+  409: 'error409',
+  429: 'error429',
+  499: 'error499',
+  500: 'error500',
 }
 
 export function normalizeApiError(error: unknown): NormalizedApiError {
   if (!axios.isAxiosError(error)) {
     return {
-      message: 'Ocorreu um erro inesperado.',
+      message: translate('unexpectedError'),
       errors: [],
     }
   }
@@ -35,10 +36,17 @@ export function normalizeApiError(error: unknown): NormalizedApiError {
 
   return {
     status,
-    message: payload?.message || (status ? defaultMessages[status] : undefined) || axiosError.message || 'Falha ao comunicar com a API.',
+    message: payload?.message || (status && defaultMessageKeys[status] ? translate(defaultMessageKeys[status]) : undefined) || axiosError.message || translate('apiCommunicationFailure'),
     correlationId: payload?.correlationId || axiosError.response?.headers['x-correlation-id'],
     errors,
   }
+}
+
+function translate(key: TranslationKey) {
+  const stored = localStorage.getItem('developerstore.language')
+  const language: Language = stored === 'en' || stored === 'es' || stored === 'pt-BR' ? stored : 'pt-BR'
+
+  return translations[language][key]
 }
 
 function normalizeErrors(errors: ApiEnvelope['errors']): string[] {

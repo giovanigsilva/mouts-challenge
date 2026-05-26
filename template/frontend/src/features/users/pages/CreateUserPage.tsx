@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { Loader2 } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
@@ -15,15 +15,18 @@ import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 import { recaptchaConfig } from '@/shared/security/recaptcha/recaptcha.config'
 import { useRecaptcha } from '@/shared/security/recaptcha/use-recaptcha'
+import { useLanguage } from '@/shared/i18n/use-language'
 
 export function CreateUserPage() {
   const { executeRecaptcha } = useRecaptcha()
+  const { t } = useLanguage()
+  const userSchema = useMemo(() => createUserSchema(t), [t])
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<CreateUserFormValues>({
-    resolver: zodResolver(createUserSchema),
+    resolver: zodResolver(userSchema),
     defaultValues: {
       username: 'Administrador DeveloperStore',
       email: 'admin@developerstore.com',
@@ -36,7 +39,7 @@ export function CreateUserPage() {
 
   const mutation = useMutation({
     mutationFn: createUser,
-    onSuccess: () => toast.success('Usuário criado com sucesso.'),
+    onSuccess: () => toast.success(t('userCreated')),
     onError: (error) => toast.error((error as unknown as NormalizedApiError).message),
   })
 
@@ -47,39 +50,39 @@ export function CreateUserPage() {
 
   return (
     <ContentContainer>
-      <PageHeader title="Criar usuário" description="Cria usuário para autenticar na API DeveloperStore." />
+      <PageHeader title={t('createUser')} description={t('createUserDescription')} />
       <form className="grid gap-4 rounded-2xl border border-white/10 bg-white/5 p-5 md:grid-cols-2" onSubmit={handleSubmit(submit)}>
-        <Field label="Nome" id="username" error={errors.username?.message}>
+        <Field label={t('name')} id="username" error={errors.username?.message}>
           <Input id="username" {...register('username')} />
         </Field>
-        <Field label="E-mail" id="email" error={errors.email?.message}>
+        <Field label={t('email')} id="email" error={errors.email?.message}>
           <Input id="email" type="email" {...register('email')} />
         </Field>
-        <Field label="Telefone" id="phone" error={errors.phone?.message}>
+        <Field label={t('phone')} id="phone" error={errors.phone?.message}>
           <Input id="phone" {...register('phone')} />
         </Field>
-        <Field label="Senha" id="password" error={errors.password?.message}>
+        <Field label={t('password')} id="password" error={errors.password?.message}>
           <Input id="password" type="password" {...register('password')} />
         </Field>
-        <Field label="Status" id="status" error={errors.status?.message}>
+        <Field label={t('status')} id="status" error={errors.status?.message}>
           <select id="status" className="h-11 w-full rounded-xl border border-white/10 bg-white/10 px-3 text-sm text-slate-100 outline-none" {...register('status', { valueAsNumber: true })}>
-            <option value={1}>Ativo</option>
-            <option value={2}>Inativo</option>
-            <option value={3}>Suspenso</option>
+            <option value={1}>{t('active')}</option>
+            <option value={2}>{t('inactive')}</option>
+            <option value={3}>{t('suspended')}</option>
           </select>
         </Field>
-        <Field label="Perfil" id="role" error={errors.role?.message}>
+        <Field label={t('profile')} id="role" error={errors.role?.message}>
           <select id="role" className="h-11 w-full rounded-xl border border-white/10 bg-white/10 px-3 text-sm text-slate-100 outline-none" {...register('role', { valueAsNumber: true })}>
-            <option value={1}>Cliente</option>
-            <option value={2}>Gerente</option>
-            <option value={3}>Administrador</option>
+            <option value={1}>{t('customer')}</option>
+            <option value={2}>{t('manager')}</option>
+            <option value={3}>{t('administrator')}</option>
           </select>
         </Field>
         <div className="md:col-span-2">
-          {recaptchaConfig.enabled ? <p className="mb-3 text-xs text-cyan-200">Proteção anti-bot simulada ativa neste formulário.</p> : null}
+          {recaptchaConfig.enabled ? <p className="mb-3 text-xs text-cyan-200">{t('recaptchaFormActive')}</p> : null}
           <Button type="submit" disabled={mutation.isPending}>
             {mutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            {mutation.isPending ? 'Criando...' : 'Criar usuário'}
+            {mutation.isPending ? t('creating') : t('createUser')}
           </Button>
         </div>
       </form>
