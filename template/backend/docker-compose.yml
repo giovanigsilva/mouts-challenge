@@ -48,6 +48,9 @@ services:
       - DD_SERVICE=${DD_SERVICE:-developerstore-sales-api}
       - DD_ENV=${DD_ENV:-development}
       - DD_VERSION=${DD_VERSION:-1.0.0}
+      - Recaptcha__Enabled=${RECAPTCHA_ENABLED:-false}
+      - Recaptcha__Provider=Simulated
+      - Recaptcha__Simulated__Enabled=true
     labels:
       com.datadoghq.ad.logs: '[{"source":"csharp","service":"developerstore-sales-api"}]'
     ports:
