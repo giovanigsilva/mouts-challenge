@@ -4,24 +4,26 @@ using AutoMapper;
 using Ambev.DeveloperEvaluation.WebApi.Common;
 using Ambev.DeveloperEvaluation.WebApi.Features.Auth.AuthenticateUserFeature;
 using Ambev.DeveloperEvaluation.Application.Auth.AuthenticateUser;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace Ambev.DeveloperEvaluation.WebApi.Features.Auth;
 
 /// <summary>
-/// Controller for authentication operations
+/// Endpoints de autenticacao da API.
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Tags("Autenticacao")]
 public class AuthController : BaseController
 {
     private readonly IMediator _mediator;
     private readonly IMapper _mapper;
 
     /// <summary>
-    /// Initializes a new instance of AuthController
+    /// Inicializa uma nova instancia do controlador de autenticacao.
     /// </summary>
-    /// <param name="mediator">The mediator instance</param>
-    /// <param name="mapper">The AutoMapper instance</param>
+    /// <param name="mediator">Instancia do MediatR usada para executar o caso de uso.</param>
+    /// <param name="mapper">Instancia do AutoMapper usada para converter request e response.</param>
     public AuthController(IMediator mediator, IMapper mapper)
     {
         _mediator = mediator;
@@ -29,12 +31,13 @@ public class AuthController : BaseController
     }
 
     /// <summary>
-    /// Authenticates a user with their credentials
+    /// Autentica um usuario e retorna um token JWT.
     /// </summary>
-    /// <param name="request">The authentication request</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Authentication token if successful</returns>
+    /// <param name="request">Credenciais do usuario.</param>
+    /// <param name="cancellationToken">Token de cancelamento da requisicao.</param>
+    /// <returns>Token JWT e dados basicos do usuario autenticado.</returns>
     [HttpPost]
+    [SwaggerOperation(OperationId = "Auth_AuthenticateUser", Summary = "Autentica um usuario.", Description = "Valida email e senha, executa o fluxo de autenticacao existente e retorna um token JWT. Use o token retornado no botao Authorize do Swagger no formato Bearer {token}.")]
     [ProducesResponseType(typeof(ApiResponseWithData<AuthenticateUserResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]

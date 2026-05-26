@@ -1,12 +1,13 @@
 namespace Ambev.DeveloperEvaluation.WebApi.Features.Users.DeleteUser;
 
 /// <summary>
-/// Request model for deleting a user
+/// Request para remocao de usuario.
 /// </summary>
 public class DeleteUserRequest
 {
     /// <summary>
-    /// The unique identifier of the user to delete
+    /// Identificador unico do usuario que sera removido.
     /// </summary>
+    /// <example>8d7e1d6b-0cc1-44fd-aec4-1efc93968fa1</example>
     public Guid Id { get; set; }
 }

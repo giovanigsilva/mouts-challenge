@@ -1,19 +1,19 @@
 ﻿namespace Ambev.DeveloperEvaluation.WebApi.Features.Auth.AuthenticateUserFeature;
 
 /// <summary>
-/// Represents the authentication request model for user login.
+/// Request de autenticacao de usuario.
 /// </summary>
 public class AuthenticateUserRequest
 {
     /// <summary>
-    /// Gets or sets the user's email address for authentication.
-    /// Must be a valid email format.
+    /// Email usado para autenticar o usuario.
     /// </summary>
+    /// <example>admin@developerstore.com</example>
     public string Email { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the user's password for authentication.
-    /// Must match the stored password after hashing.
+    /// Senha do usuario.
     /// </summary>
+    /// <example>Senha@123456</example>
     public string Password { get; set; } = string.Empty;
 }

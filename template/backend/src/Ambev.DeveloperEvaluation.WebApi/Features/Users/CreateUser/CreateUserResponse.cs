@@ -3,37 +3,41 @@ using Ambev.DeveloperEvaluation.Domain.Enums;
 namespace Ambev.DeveloperEvaluation.WebApi.Features.Users.CreateUser;
 
 /// <summary>
-/// API response model for CreateUser operation
+/// Response da criacao de usuario.
 /// </summary>
 public class CreateUserResponse
 {
     /// <summary>
-    /// The unique identifier of the created user
+    /// Identificador unico do usuario criado.
     /// </summary>
+    /// <example>8d7e1d6b-0cc1-44fd-aec4-1efc93968fa1</example>
     public Guid Id { get; set; }
 
     /// <summary>
-    /// The user's full name
+    /// Nome do usuario.
     /// </summary>
+    /// <example>Joao Silva</example>
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
-    /// The user's email address
+    /// Email do usuario.
     /// </summary>
+    /// <example>joao.silva@example.com</example>
     public string Email { get; set; } = string.Empty;
 
     /// <summary>
-    /// The user's phone number
+    /// Telefone do usuario.
     /// </summary>
+    /// <example>11999999999</example>
     public string Phone { get; set; } = string.Empty;
 
     /// <summary>
-    /// The user's role in the system
+    /// Perfil do usuario no sistema.
     /// </summary>
     public UserRole Role { get; set; }
 
     /// <summary>
-    /// The current status of the user
+    /// Status atual do usuario.
     /// </summary>
     public UserStatus Status { get; set; }
 }
