@@ -1,4 +1,5 @@
 using Ambev.DeveloperEvaluation.Common.Validation;
+using Ambev.DeveloperEvaluation.Common.Logging;
 using Ambev.DeveloperEvaluation.WebApi.Common;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -126,6 +127,6 @@ public sealed class GlobalExceptionMiddleware
         if (statusCode == StatusCodes.Status500InternalServerError && !_environment.IsDevelopment())
             return "Erro interno ao processar a requisicao. Informe o correlationId ao suporte.";
 
-        return exception.Message;
+        return SensitiveDataMasker.MaskSensitiveText(exception.Message);
     }
 }
