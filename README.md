@@ -2,511 +2,505 @@
 <img width="1907" height="670" alt="image" src="https://github.com/user-attachments/assets/85218ae7-83fd-45b1-a189-b598426c6e8e" />
 <img width="1114" height="620" alt="image" src="https://github.com/user-attachments/assets/577bd7a5-f181-4911-bba8-87fe85603fc4" />
 
-
 # DeveloperStore Sales API
 
-Backend do desafio DeveloperStore implementado sobre o template `Ambev.DeveloperEvaluation`, usando .NET 8, Clean Architecture, DDD no dominio de vendas, CQRS com MediatR, EF Core com PostgreSQL, JWT, FluentValidation, AutoMapper, Serilog, Swagger/OpenAPI, Docker e testes unitarios.
+API do desafio DeveloperStore implementada em .NET 8 com Clean Architecture, DDD, CQRS com MediatR, Entity Framework Core, PostgreSQL, FluentValidation, JWT Bearer, Serilog, Swagger/OpenAPI em portugues, Docker, Seq, Datadog Agent, HashiCorp Vault local para segredos de Development, Redis opcional, OpenTelemetry, Prometheus, Grafana e k6.
 
-Este README descreve exatamente o que existe nesta branch.
+Este README foi escrito para o avaliador clonar o repositorio e inicializar a API do zero.
 
-## Status da Entrega
+## Sumario
 
-Implementado:
+- [O que esta implementado](#o-que-esta-implementado)
+- [Pre-requisitos](#pre-requisitos)
+- [Inicializacao rapida com Docker](#inicializacao-rapida-com-docker)
+- [Migrations](#migrations)
+- [Modelagem do banco de dados](#modelagem-do-banco-de-dados)
+- [Swagger](#swagger)
+- [Fluxo de teste por curl](#fluxo-de-teste-por-curl)
+- [Rodar sem container para a API](#rodar-sem-container-para-a-api)
+- [Testes](#testes)
+- [Composicao de dependencias](#composicao-de-dependencias)
+- [Ambientes](#ambientes)
+- [Segredos e Vault local](#segredos-e-vault-local)
+- [reCAPTCHA v3 simulado](#recaptcha-v3-simulado)
+- [Observabilidade](#observabilidade)
+- [Stack enterprise local](#stack-enterprise-local)
+- [Testes de carga com k6](#testes-de-carga-com-k6)
+- [Frontend React](#frontend-react)
+- [Idiomas do frontend](#idiomas-do-frontend)
+- [Troubleshooting](#troubleshooting)
 
-- Auth e Users preservados do template.
+## O que esta implementado
+
+- Auth com JWT.
+- Users.
 - CRUD completo de Sales.
-- Frontend React completo para demonstrar login, dashboard, vendas, cancelamentos e saúde da API.
-- Regras de desconto no Domain.
-- Aggregate `Sale` com itens protegidos.
+- Cancelamento de venda.
+- Cancelamento de item.
+- Regras de desconto por quantidade no dominio.
 - External Identities com snapshot denormalizado para cliente, filial e produto.
-- EF Core/PostgreSQL com migration de Sales.
-- Eventos diferenciais registrados em log.
-- Swagger habilitado em Development e UAT.
-- Separacao de ambientes Development, UAT e Production.
-- Health checks `/health/live` e `/health/ready`.
-- Docker Compose com WebApi e PostgreSQL.
-- Testes unitarios de regras de dominio e validators.
-- Documentacao complementar na pasta `.doc` e em `template/backend/docs`.
+- Eventos de venda registrados em log: `SaleCreated`, `SaleModified`, `SaleCancelled`, `ItemCancelled`.
+- PostgreSQL com EF Core migrations no projeto `Ambev.DeveloperEvaluation.ORM`.
+- Migrations automaticas no startup da API.
+- Health checks: `/health/live`, `/health/ready`, `/health/logging`, `/health/cache`, `/health/metrics`, `/health/enterprise`.
+- Endpoint Prometheus: `/metrics`.
+- Swagger em portugues.
+- FluentValidation em requests, commands e queries.
+- CorrelationId via header `X-Correlation-Id`.
+- Logs estruturados com Serilog.
+- Seq local em `http://localhost:5341`.
+- Datadog Agent configurado via Docker.
+- Vault local em modo dev para segredos de Development.
+- Redis opcional para cache de leitura no profile enterprise.
+- Prometheus, Grafana, postgres-exporter e redis-exporter opcionais no profile enterprise.
+- k6 opcional no profile loadtest.
+- IoC centralizado em `src/Ambev.DeveloperEvaluation.IoC/ModuleInitializers`.
+- Separacao de ambientes: `Development`, `Uat` e `Production`.
+- reCAPTCHA v3 simulado para login e criacao de usuario, desabilitado por padrao em Development.
+- Frontend React com seletor de idioma em `PT-BR`, `EN` e `ES`.
 
-Fora do escopo implementado nesta versao:
+Fora do escopo desta prova: Azure Service Bus real, Azure Functions reais, Azure Key Vault real e blue-green real.
 
-- Azure Service Bus real.
-- Redis obrigatorio.
-- Azure Functions.
-- Worker.
-- Outbox Pattern.
-- Key Vault real.
-- Blue-green deployment real.
-- Filas reais.
+## Pre-requisitos
 
-Os eventos de vendas sao registrados no log da aplicacao, conforme permitido pelo enunciado da prova.
+Instale:
 
-## Requisitos
+- Git.
+- Docker Desktop com Docker Compose.
+- .NET SDK 8.
+- PowerShell.
 
-Instale antes de executar:
+Confira as versoes:
 
-- .NET SDK 8
-- Docker Desktop
-- Git
-- dotnet-ef, caso ainda nao tenha:
+```powershell
+git --version
+docker --version
+docker compose version
+dotnet --version
+```
+
+Instale o Entity Framework CLI se ainda nao existir:
 
 ```powershell
 dotnet tool install --global dotnet-ef
-```
-
-Verifique:
-
-```powershell
-dotnet --version
-docker --version
-docker compose version
 dotnet ef --version
 ```
 
-## Estrutura
-
-Backend:
-
-```text
-template/backend
-```
-
-Frontend:
-
-```text
-template/frontend
-```
-
-Solution:
-
-```text
-template/backend/Ambev.DeveloperEvaluation.sln
-```
-
-Projetos:
-
-```text
-template/backend/src/Ambev.DeveloperEvaluation.WebApi
-template/backend/src/Ambev.DeveloperEvaluation.Application
-template/backend/src/Ambev.DeveloperEvaluation.Domain
-template/backend/src/Ambev.DeveloperEvaluation.ORM
-template/backend/src/Ambev.DeveloperEvaluation.Common
-template/backend/src/Ambev.DeveloperEvaluation.IoC
-```
-
-Testes:
-
-```text
-template/backend/tests/Ambev.DeveloperEvaluation.Unit
-template/backend/tests/Ambev.DeveloperEvaluation.Integration
-template/backend/tests/Ambev.DeveloperEvaluation.Functional
-```
-
-Documentacao:
-
-```text
-.doc
-template/backend/docs
-template/frontend/README.md
-```
-
-## Arquitetura
-
-A solution segue a organizacao original do template:
-
-- `WebApi`: Controllers, requests, validators HTTP, middlewares, Swagger e health checks.
-- `Application`: Commands, queries, handlers, validators, results e profiles.
-- `Domain`: Entidades, regras de negocio, eventos, exceptions, services e repositories contracts.
-- `ORM`: `DefaultContext`, mappings EF Core, repositories e migrations.
-- `Common`: JWT, seguranca, logging, health checks e validacao.
-- `IoC`: registro de dependencias.
-
-Regra importante aplicada:
-
-- Controller nao contem regra de negocio.
-- Handler nao calcula desconto.
-- Repository nao decide regra de negocio.
-- Banco nao calcula regra de negocio.
-- Desconto, cancelamento e totalizacao ficam no Domain.
-
-## Tecnologias
-
-- .NET 8
-- ASP.NET Core Web API
-- MediatR
-- AutoMapper
-- FluentValidation
-- Entity Framework Core
-- Npgsql/PostgreSQL
-- JWT Bearer
-- BCrypt
-- Serilog
-- Swagger/OpenAPI com Swashbuckle
-- xUnit
-- FluentAssertions
-- Docker Compose
-- React
-- TypeScript
-- Vite
-- React Router
-- TanStack Query
-- React Hook Form
-- Zod
-- Tailwind CSS
-- Axios
-- Motion for React
-- Sonner
-- Lucide React
-
-## Frontend React
-
-O frontend foi implementado em `template/frontend` para demonstrar visualmente a prova consumindo a API real em `http://localhost:8080`.
-
-Funcionalidades implementadas:
-
-- Login com JWT Bearer.
-- Botão `Usar demo` na tela de login.
-- Rotas protegidas.
-- Dashboard/Painel com indicadores da listagem de vendas.
-- CRUD visual de vendas.
-- Cancelamento de venda.
-- Cancelamento de item.
-- Validação de formulários com Zod.
-- Bloqueio de produto duplicado na mesma venda com aviso na tela.
-- Aviso para item cancelado que não pode ser editado.
-- Health page consumindo endpoints de saúde.
-- reCAPTCHA v3 simulado exibido visualmente no login.
-- Interface em PT-BR com textos acentuados.
-
-Executar com Docker:
+## Clone e pasta do backend
 
 ```powershell
-cd template/backend
-docker compose up --build -d
+git clone <URL_DO_REPOSITORIO>
+cd mouts-challenge\template\backend
+git checkout develop
 ```
 
-Acessar:
-
-```text
-http://localhost:5173/
-```
-
-Login rápido:
-
-1. Abra `http://localhost:5173/`.
-2. Clique em `Usar demo`.
-3. Clique em `Entrar`.
-
-Credenciais preenchidas pelo botão:
-
-```text
-E-mail: admin@developerstore.com
-Senha:  Senha@123456
-```
-
-Executar sem Docker:
+Se o repositorio ja estiver clonado nesta maquina:
 
 ```powershell
-cd template/frontend
-Copy-Item .env.example .env
-npm install
-npm run dev
+cd C:\Users\Giovani\source\repos\mouts-challenge\template\backend
+git checkout develop
 ```
 
-Documentação específica:
+## Inicializacao rapida com Docker
 
-```text
-template/frontend/README.md
+Este e o fluxo recomendado para avaliar o projeto.
+
+### 1. Limpar execucoes antigas
+
+Use este comando quando quiser iniciar realmente do zero. Ele remove containers e volumes locais do projeto, incluindo banco local e dados do Seq.
+
+```powershell
+docker compose down --volumes --remove-orphans
 ```
 
-## Modelo Sales
+### 2. Subir infraestrutura local
 
-`Sale`:
-
-- `Id`
-- `SaleNumber`
-- `SaleDate`
-- `CustomerExternalId`
-- `CustomerName`
-- `BranchExternalId`
-- `BranchName`
-- `TotalAmount`
-- `IsCancelled`
-- `CreatedAt`
-- `UpdatedAt`
-- `Items`
-
-`SaleItem`:
-
-- `Id`
-- `SaleId`
-- `ProductExternalId`
-- `ProductName`
-- `Quantity`
-- `UnitPrice`
-- `DiscountPercentage`
-- `DiscountAmount`
-- `TotalAmount`
-- `IsCancelled`
-- `CreatedAt`
-- `UpdatedAt`
-
-## Regras de Negocio
-
-Descontos:
-
-```text
-1 a 3 itens identicos   -> 0%
-4 a 9 itens identicos   -> 10%
-10 a 20 itens identicos -> 20%
-acima de 20             -> invalido
+```powershell
+docker compose up -d ambev.developerevaluation.database vault seq
 ```
 
-Outras regras:
+Servicos esperados:
 
-- Nao e permitido repetir o mesmo `ProductExternalId` na mesma venda.
-- Item cancelado nao entra no total da venda.
-- Venda cancelada nao permite alteracao de itens.
-- O total da venda e recalculado pelo aggregate.
-- Desconto manual nao e aceito na request.
+- PostgreSQL: `localhost:5432`
+- Vault dev: `http://localhost:8200`
+- Seq: `http://localhost:5341`
 
-## Endpoints
+### 3. Popular segredos no Vault local
 
-Auth e Users do template:
+PowerShell:
 
-```text
-POST   /api/Auth
-POST   /api/Users
-GET    /api/Users/{id}
-DELETE /api/Users/{id}
+```powershell
+$env:VAULT_ADDR="http://localhost:8200"
+$env:VAULT_TOKEN="dev-root-token"
+.\scripts\vault-init-dev.ps1
 ```
 
-Sales:
+Linux/macOS:
 
-```text
-POST   /api/sales
-GET    /api/sales
-GET    /api/sales/{id}
-PUT    /api/sales/{id}
-DELETE /api/sales/{id}
-PATCH  /api/sales/{id}/cancel
-PATCH  /api/sales/{id}/items/{itemId}/cancel
+```bash
+export VAULT_ADDR=http://localhost:8200
+export VAULT_TOKEN=dev-root-token
+./scripts/vault-init-dev.sh
 ```
 
-Filtros de `GET /api/sales`:
+O script usa o Vault CLI se estiver instalado. Se nao estiver, ele executa o comando pelo container `developerstore-vault`.
 
-```text
-page
-pageSize
-saleNumber
-customerId
-branchId
-isCancelled
-fromDate
-toDate
+### 4. Subir a WebApi
+
+Ao iniciar, a API espera o PostgreSQL ficar saudavel, valida a conexao com o banco e aplica automaticamente migrations pendentes. Se for a primeira execucao, as tabelas sao criadas nesse momento.
+
+```powershell
+docker compose up --build -d ambev.developerevaluation.webapi
 ```
 
-## Autenticacao
+### 5. Verificar containers
 
-Sales exige JWT.
-
-Fluxo:
-
-1. Criar usuario em `POST /api/Users`.
-2. Autenticar em `POST /api/Auth`.
-3. Usar o token no header:
-
-```text
-Authorization: Bearer {token}
+```powershell
+docker compose ps
 ```
 
-Policies configuradas:
+### 6. Conferir logs de migrations na primeira subida
 
-```text
-Sales.Read
-Sales.Write
-Sales.Cancel
-Sales.Delete
+```powershell
+docker logs --tail 100 ambev_developer_evaluation_webapi
 ```
 
-Nesta entrega, as policies exigem usuario autenticado.
+Devem aparecer pelo menos:
 
-## Ambientes
+- `ambev_developer_evaluation_webapi`
+- `ambev_developer_evaluation_database`
+- `developerstore-vault`
+- `developerstore_seq`
 
-Arquivos:
+O Datadog Agent e opcional para a prova local. Para subi-lo tambem:
+
+```powershell
+docker compose up -d datadog-agent
+```
+
+## Migrations
+
+Projeto de migrations:
 
 ```text
-template/backend/src/Ambev.DeveloperEvaluation.WebApi/appsettings.json
-template/backend/src/Ambev.DeveloperEvaluation.WebApi/appsettings.Development.json
-template/backend/src/Ambev.DeveloperEvaluation.WebApi/appsettings.Uat.json
-template/backend/src/Ambev.DeveloperEvaluation.WebApi/appsettings.Production.json
+src/Ambev.DeveloperEvaluation.ORM
+```
+
+Startup project:
+
+```text
+src/Ambev.DeveloperEvaluation.WebApi
+```
+
+Normalmente nao e necessario aplicar migrations manualmente em Development, porque a API confere e aplica migrations pendentes na inicializacao. O comando manual abaixo continua util para diagnostico ou manutencao:
+
+```powershell
+$env:ASPNETCORE_ENVIRONMENT="Development"
+dotnet ef database update --project src/Ambev.DeveloperEvaluation.ORM --startup-project src/Ambev.DeveloperEvaluation.WebApi
+```
+
+Connection string local usada pelo host:
+
+```text
+Host=localhost;Port=5432;Database=developer_evaluation;Username=developerstore_app;Password=DevOnly_Pg_9fR!42sL#2026_Strong
+```
+
+Connection string usada dentro do Docker:
+
+```text
+Host=ambev.developerevaluation.database;Port=5432;Database=developer_evaluation;Username=developerstore_app;Password=DevOnly_Pg_9fR!42sL#2026_Strong
+```
+
+## Modelagem do banco de dados
+
+A modelagem atual usa PostgreSQL com Entity Framework Core. O `DefaultContext` possui tres agregados persistidos:
+
+```text
+src/Ambev.DeveloperEvaluation.ORM/DefaultContext.cs
+
+DbSet<User> Users
+DbSet<Sale> Sales
+DbSet<SaleItem> SaleItems
+```
+
+Mapeamentos EF Core confirmados:
+
+```text
+src/Ambev.DeveloperEvaluation.ORM/Mapping/BaseEntityConfigurationExtensions.cs
+src/Ambev.DeveloperEvaluation.ORM/Mapping/UserConfiguration.cs
+src/Ambev.DeveloperEvaluation.ORM/Mapping/SaleConfiguration.cs
+src/Ambev.DeveloperEvaluation.ORM/Mapping/SaleItemConfiguration.cs
+```
+
+Todas as entidades persistidas herdam de `BaseEntity` e usam o mesmo mapeamento comum:
+
+```text
+Id uuid PK default gen_random_uuid()
+CreatedAt timestamp with time zone not null
+UpdatedAt timestamp with time zone null
+```
+
+### Visao relacional
+
+```mermaid
+erDiagram
+    Users {
+        uuid Id PK
+        varchar Username
+        varchar Password
+        varchar Phone
+        varchar Email
+        varchar Status
+        varchar Role
+        timestamptz CreatedAt
+        timestamptz UpdatedAt
+    }
+
+    Sales {
+        uuid Id PK
+        varchar SaleNumber UK
+        timestamptz SaleDate
+        uuid CustomerExternalId
+        varchar CustomerName
+        uuid BranchExternalId
+        varchar BranchName
+        numeric TotalAmount
+        boolean IsCancelled
+        timestamptz CreatedAt
+        timestamptz UpdatedAt
+    }
+
+    SaleItems {
+        uuid Id PK
+        uuid SaleId FK
+        uuid ProductExternalId
+        varchar ProductName
+        int Quantity
+        numeric UnitPrice
+        numeric DiscountPercentage
+        numeric DiscountAmount
+        numeric TotalAmount
+        boolean IsCancelled
+        timestamptz CreatedAt
+        timestamptz UpdatedAt
+    }
+
+    Sales ||--o{ SaleItems : possui
+```
+
+### Correlacoes entre dominio e banco
+
+| Dominio | Tabela | Relacionamento | Observacao |
+| --- | --- | --- | --- |
+| `User` | `Users` | Sem FK para vendas | Usado por Auth/Users. A autenticacao gera JWT, mas vendas nao armazenam `UserId`. |
+| `Sale` | `Sales` | Raiz do agregado | Armazena cabecalho da venda e snapshots de cliente e filial. |
+| `SaleItem` | `SaleItems` | `SaleItems.SaleId -> Sales.Id` | Itens pertencem a uma venda. O delete da venda remove os itens por cascade. |
+| Customer externo | Colunas em `Sales` | Sem tabela local | `CustomerExternalId` e `CustomerName` sao snapshot denormalizado. |
+| Branch externa | Colunas em `Sales` | Sem tabela local | `BranchExternalId` e `BranchName` sao snapshot denormalizado. |
+| Product externo | Colunas em `SaleItems` | Sem tabela local | `ProductExternalId` e `ProductName` sao snapshot denormalizado. |
+| Eventos de dominio | Nao persistidos | Sem tabela | `SaleCreated`, `SaleModified`, `SaleCancelled` e `ItemCancelled` sao registrados em log estruturado. |
+
+### Users
+
+Tabela de usuarios usada por Auth e Users. O mapeamento EF converte `Status` e `Role` para string no banco.
+
+```text
+Users
+-----
+Id uuid PK default gen_random_uuid()
+Username varchar(50) not null
+Password varchar(100) not null
+Phone varchar(20) not null
+Email varchar(100) not null
+Status varchar(20) not null
+Role varchar(20) not null
+CreatedAt timestamp with time zone not null
+UpdatedAt timestamp with time zone null
 ```
 
 Mapeamento:
 
 ```text
-develop -> Development
-uat     -> Uat
-main    -> Production
+User.Id        -> Users.Id
+User.Username  -> Users.Username
+User.Password  -> Users.Password
+User.Phone     -> Users.Phone
+User.Email     -> Users.Email
+User.Status    -> Users.Status, enum convertido para string
+User.Role      -> Users.Role, enum convertido para string
+User.CreatedAt -> Users.CreatedAt
+User.UpdatedAt -> Users.UpdatedAt
 ```
 
-Production nao possui segredo real em arquivo. Use variaveis de ambiente para connection string e JWT secret.
+### Sales
 
-Variaveis suportadas:
+Tabela principal do agregado de vendas.
 
 ```text
-ASPNETCORE_ENVIRONMENT
-ConnectionStrings__DefaultConnection
-Jwt__SecretKey
-Jwt__Issuer
-Jwt__Audience
-Jwt__ExpirationMinutes
-Swagger__Enabled
-Security__AllowedOrigins__0
-Security__EnableHsts
-Security__EnableHttpsRedirection
-Security__EnableSecurityHeaders
-Features__EnableDetailedErrors
+Sales
+-----
+Id uuid PK default gen_random_uuid()
+SaleNumber varchar(60) not null unique
+SaleDate timestamp with time zone not null
+CustomerExternalId uuid not null
+CustomerName varchar(120) not null
+BranchExternalId uuid not null
+BranchName varchar(120) not null
+TotalAmount numeric(18,2) not null
+IsCancelled boolean not null
+CreatedAt timestamp with time zone not null
+UpdatedAt timestamp with time zone null
 ```
 
-## Rodar com Docker
-
-Entre na pasta do backend:
-
-```powershell
-cd template/backend
-```
-
-Suba WebApi e PostgreSQL:
-
-```powershell
-docker compose up --build
-```
-
-Em outro terminal, aplique as migrations:
-
-```powershell
-dotnet ef database update --project src/Ambev.DeveloperEvaluation.ORM --startup-project src/Ambev.DeveloperEvaluation.WebApi
-```
-
-URLs no Docker:
+Indices:
 
 ```text
-API:     http://localhost:8080
-Swagger: http://localhost:8080/swagger
-Live:    http://localhost:8080/health/live
-Ready:   http://localhost:8080/health/ready
+IX_Sales_SaleNumber unique
+IX_Sales_CustomerExternalId
+IX_Sales_BranchExternalId
+IX_Sales_SaleDate
+IX_Sales_IsCancelled
 ```
 
-Parar containers:
-
-```powershell
-docker compose down
-```
-
-Remover volumes do banco local:
-
-```powershell
-docker compose down -v
-```
-
-## Rodar Local Sem Container da API
-
-Suba apenas PostgreSQL:
-
-```powershell
-cd template/backend
-docker compose up -d ambev.developerevaluation.database
-```
-
-Configure ambiente:
-
-```powershell
-$env:ASPNETCORE_ENVIRONMENT="Development"
-```
-
-Restaure, compile e aplique migrations:
-
-```powershell
-dotnet restore
-dotnet build --configuration Release --no-restore
-dotnet ef database update --project src/Ambev.DeveloperEvaluation.ORM --startup-project src/Ambev.DeveloperEvaluation.WebApi
-```
-
-Execute a API:
-
-```powershell
-dotnet run --project src/Ambev.DeveloperEvaluation.WebApi
-```
-
-URL local comum:
+Mapeamento:
 
 ```text
-http://localhost:5119/swagger
+Sale.Id                 -> Sales.Id
+Sale.SaleNumber         -> Sales.SaleNumber
+Sale.SaleDate           -> Sales.SaleDate
+Sale.CustomerExternalId -> Sales.CustomerExternalId
+Sale.CustomerName       -> Sales.CustomerName
+Sale.BranchExternalId   -> Sales.BranchExternalId
+Sale.BranchName         -> Sales.BranchName
+Sale.TotalAmount        -> Sales.TotalAmount
+Sale.IsCancelled        -> Sales.IsCancelled
+Sale.CreatedAt          -> Sales.CreatedAt
+Sale.UpdatedAt          -> Sales.UpdatedAt
+Sale.Items              -> SaleItems via SaleItems.SaleId
+Sale.DomainEvents       -> ignorado pelo EF, nao vira coluna
 ```
 
-A porta exata tambem aparece no output do `dotnet run`.
+### SaleItems
 
-## Rodar Testes
-
-Na pasta `template/backend`:
-
-```powershell
-dotnet test --configuration Release
-```
-
-Resultado validado nesta branch:
+Tabela de itens da venda.
 
 ```text
-71 testes unitarios passando
-0 falhas
+SaleItems
+---------
+Id uuid PK default gen_random_uuid()
+SaleId uuid FK -> Sales.Id not null
+ProductExternalId uuid not null
+ProductName varchar(120) not null
+Quantity integer not null
+UnitPrice numeric(18,2) not null
+DiscountPercentage numeric(5,2) not null
+DiscountAmount numeric(18,2) not null
+TotalAmount numeric(18,2) not null
+IsCancelled boolean not null
+CreatedAt timestamp with time zone not null
+UpdatedAt timestamp with time zone null
 ```
 
-Observacao: os projetos `Functional` e `Integration` existem no template, mas atualmente nao possuem testes descobertos.
+Indices:
 
-## Verificar Vulnerabilidades de Pacotes
-
-O comando na solution pode retornar erro por causa do projeto `docker-compose.dcproj`. Para validar os projetos .NET reais:
-
-```powershell
-$projects = Get-ChildItem -Path .\src, .\tests -Recurse -Filter *.csproj | Where-Object { $_.FullName -notmatch '\\bin\\|\\obj\\' }
-foreach ($project in $projects) {
-  dotnet list $project.FullName package --vulnerable --include-transitive
-}
+```text
+IX_SaleItems_SaleId
+IX_SaleItems_ProductExternalId
 ```
 
-Validado nesta branch: nenhum pacote vulneravel nos `.csproj` da solution.
+Mapeamento:
 
-## Health Checks
+```text
+SaleItem.Id                 -> SaleItems.Id
+SaleItem.SaleId             -> SaleItems.SaleId
+SaleItem.ProductExternalId  -> SaleItems.ProductExternalId
+SaleItem.ProductName        -> SaleItems.ProductName
+SaleItem.Quantity           -> SaleItems.Quantity
+SaleItem.UnitPrice          -> SaleItems.UnitPrice
+SaleItem.DiscountPercentage -> SaleItems.DiscountPercentage
+SaleItem.DiscountAmount     -> SaleItems.DiscountAmount
+SaleItem.TotalAmount        -> SaleItems.TotalAmount
+SaleItem.IsCancelled        -> SaleItems.IsCancelled
+SaleItem.CreatedAt          -> SaleItems.CreatedAt
+SaleItem.UpdatedAt          -> SaleItems.UpdatedAt
+```
 
-Com Docker:
+Relacionamento:
+
+```text
+Sales 1:N SaleItems
+SaleItems.SaleId -> Sales.Id
+DeleteBehavior: Cascade
+```
+
+Observacoes importantes:
+
+- `Users` nao possui relacionamento direto com `Sales`.
+- Nao existem tabelas `Customers`, `Branches` ou `Products`.
+- Sales usa snapshot denormalizado por external identity: `CustomerExternalId`, `CustomerName`, `BranchExternalId`, `BranchName`, `ProductExternalId` e `ProductName`.
+- Eventos de dominio existem no dominio, mas nao sao persistidos em tabela.
+- Cache Redis, metricas, logs, health checks e reCAPTCHA nao criam tabelas nesta implementacao.
+
+Prompt pronto para gerar um DER:
+
+```text
+Desenhe um DER/ERD para um banco PostgreSQL com as tabelas Users, Sales e SaleItems.
+
+Users possui:
+Id uuid PK, Username varchar(50), Password varchar(100), Phone varchar(20), Email varchar(100), Status varchar(20), Role varchar(20), CreatedAt timestamptz, UpdatedAt timestamptz nullable.
+
+Sales possui:
+Id uuid PK, SaleNumber varchar(60) unique, SaleDate timestamptz, CustomerExternalId uuid, CustomerName varchar(120), BranchExternalId uuid, BranchName varchar(120), TotalAmount numeric(18,2), IsCancelled boolean, CreatedAt timestamptz, UpdatedAt timestamptz nullable.
+
+SaleItems possui:
+Id uuid PK, SaleId uuid FK para Sales.Id, ProductExternalId uuid, ProductName varchar(120), Quantity integer, UnitPrice numeric(18,2), DiscountPercentage numeric(5,2), DiscountAmount numeric(18,2), TotalAmount numeric(18,2), IsCancelled boolean, CreatedAt timestamptz, UpdatedAt timestamptz nullable.
+
+Relacionamento:
+Sales 1:N SaleItems, com cascade delete.
+
+Observacoes:
+Users nao se relaciona com Sales.
+Nao existem tabelas Customer, Branch ou Product.
+Sales guarda snapshots denormalizados de cliente, filial e produto atraves de ExternalId e Name.
+```
+
+## Health checks
+
+Com a API no Docker:
 
 ```powershell
 curl.exe -i http://localhost:8080/health/live
 curl.exe -i http://localhost:8080/health/ready
+curl.exe -i http://localhost:8080/health/logging
+curl.exe -i http://localhost:8080/health/cache
+curl.exe -i http://localhost:8080/health/metrics
+curl.exe -i http://localhost:8080/health/enterprise
 ```
 
-`/health/live` valida processo vivo.
+Resultado esperado:
 
-`/health/ready` valida readiness e conectividade com PostgreSQL.
+- `/health/live`: `200 OK`, processo vivo.
+- `/health/ready`: `200 OK`, API pronta e PostgreSQL/configuracoes essenciais OK.
+- `/health/logging`: `200 OK`, configuracao de logs sem expor segredo.
+- `/health/cache`: `200 OK`, status seguro do cache. Com `Cache:Enabled=false`, informa cache desabilitado.
+- `/health/metrics`: `200 OK`, status seguro das metricas.
+- `/health/enterprise`: `200 OK`, status seguro da stack local: Seq, Redis, Prometheus, Grafana e Datadog.
 
-As respostas de health nao expõem detalhes internos de excecao. Quando uma dependencia falha, a API retorna uma mensagem operacional segura.
-
-`/health/logging` retorna apenas configuracoes seguras de observabilidade:
+Metricas Prometheus:
 
 ```powershell
-curl.exe -i http://localhost:8080/health/logging
+curl.exe -i http://localhost:8080/metrics
 ```
 
-## Documentacao Swagger/OpenAPI
+## Swagger
 
-Docker:
+Com Docker:
 
 ```text
 http://localhost:8080/swagger
 ```
 
-Local via `dotnet run`:
+Com `dotnet run` local:
 
 ```text
 http://localhost:5119/swagger
@@ -514,375 +508,760 @@ http://localhost:5119/swagger
 
 No Swagger:
 
-1. Crie usuario em `POST /api/Users`.
+1. Crie um usuario em `POST /api/Users`.
 2. Autentique em `POST /api/Auth`.
-3. Copie `data.token`.
+3. Copie o token retornado.
 4. Clique em `Authorize`.
-5. Informe `Bearer {token}`.
+5. Informe `Bearer <TOKEN>`.
+6. Teste os endpoints de Sales.
 
-O Swagger foi configurado para funcionar como documentacao principal da API:
+## Fluxo de teste por curl
 
-- Titulo: `DeveloperStore Sales API`.
-- Descricao em portugues do Brasil com arquitetura, Sales, regras de desconto, eventos logados, ambientes, health checks e padrao de resposta.
-- Botao `Authorize` com JWT Bearer.
-- Header opcional `X-Correlation-Id` documentado nas operacoes.
-- Tags em portugues: `Autenticacao`, `Usuarios`, `Vendas`, `Cancelamentos` e `Saude`.
-- OperationIds estaveis para integracao externa.
-- Exemplos de request e response para criacao de venda.
-- Erros padronizados documentados sem stack trace, segredo, SQL ou connection string.
-- Respostas `408`, `409`, `499` e `500` documentadas para timeout, conflito, cancelamento pelo cliente e erro inesperado.
+Os exemplos abaixo usam PowerShell e `curl.exe`.
 
-Operacao rapida pelo Swagger:
-
-1. Execute a API.
-2. Abra `/swagger`.
-3. Crie ou use um usuario.
-4. Autentique em `POST /api/Auth`.
-5. Autorize com `Bearer {token}`.
-6. Execute `POST /api/sales`.
-7. Execute `GET /api/sales`.
-8. Execute os endpoints de consulta, atualizacao e cancelamento.
-
-Comportamento por ambiente:
-
-- Development: Swagger habilitado e detailed errors habilitados.
-- UAT: Swagger habilitado para avaliacao e detailed errors limitados.
-- Production: Swagger controlado por configuracao e desabilitado por padrao em uso real.
-
-Guia detalhado:
-
-```text
-template/backend/docs/swagger.md
-```
-
-## Exemplo Completo com Curl
-
-Criar usuario:
+### 1. Criar usuario admin
 
 ```powershell
-curl.exe -X POST "http://localhost:8080/api/Users" ^
-  -H "Content-Type: application/json" ^
-  -d "{\"username\":\"salesuser\",\"password\":\"Sales@12345\",\"phone\":\"+5511999999999\",\"email\":\"salesuser@example.com\",\"status\":1,\"role\":1}"
+curl.exe -i -X POST http://localhost:8080/api/Users `
+  -H "Content-Type: application/json" `
+  -H "X-Correlation-Id: 11111111-1111-1111-1111-111111111111" `
+  -d '{\"username\":\"Admin DeveloperStore\",\"password\":\"Senha@123456\",\"phone\":\"11999999999\",\"email\":\"admin@developerstore.com\",\"status\":1,\"role\":3}'
 ```
 
-Autenticar:
+Valores confirmados nos enums do projeto:
+
+- `status: 1` = `Active`
+- `role: 3` = `Admin`
+
+### 2. Autenticar
 
 ```powershell
-curl.exe -X POST "http://localhost:8080/api/Auth" ^
-  -H "Content-Type: application/json" ^
-  -d "{\"email\":\"salesuser@example.com\",\"password\":\"Sales@12345\"}"
+curl.exe -i -X POST http://localhost:8080/api/Auth `
+  -H "Content-Type: application/json" `
+  -d '{\"email\":\"admin@developerstore.com\",\"password\":\"Senha@123456\"}'
 ```
 
-Criar venda:
+Copie o token retornado em `data.token`.
 
 ```powershell
-curl.exe -X POST "http://localhost:8080/api/sales" ^
-  -H "Authorization: Bearer {token}" ^
-  -H "Content-Type: application/json" ^
-  -d "{\"saleNumber\":\"SALE-2026-000001\",\"saleDate\":\"2026-05-26T12:00:00Z\",\"customerExternalId\":\"11111111-1111-1111-1111-111111111111\",\"customerName\":\"Cliente Exemplo\",\"branchExternalId\":\"22222222-2222-2222-2222-222222222222\",\"branchName\":\"Filial Centro\",\"items\":[{\"productExternalId\":\"33333333-3333-3333-3333-333333333333\",\"productName\":\"Produto Exemplo\",\"quantity\":10,\"unitPrice\":100}]}"
+$TOKEN="<COLE_AQUI_O_TOKEN>"
 ```
 
-Resultado esperado da venda:
-
-```text
-quantity: 10
-unitPrice: 100
-discountPercentage: 20
-totalAmount: 800
-```
-
-Listar venda:
+### 3. Criar venda
 
 ```powershell
-curl.exe -X GET "http://localhost:8080/api/sales?saleNumber=SALE-2026-000001" ^
-  -H "Authorization: Bearer {token}"
+curl.exe -i -X POST http://localhost:8080/api/sales `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer $TOKEN" `
+  -H "X-Correlation-Id: 22222222-2222-2222-2222-222222222222" `
+  -d '{\"saleNumber\":\"SALE-2026-000001\",\"saleDate\":\"2026-05-26T14:30:00Z\",\"customerExternalId\":\"5c9d7b1e-2a63-4e69-9c55-4c0e8142f8c1\",\"customerName\":\"Joao da Silva\",\"branchExternalId\":\"7a2b2c71-6c2e-4f54-8a7e-32159a4d53e2\",\"branchName\":\"Loja Centro - Sao Paulo\",\"items\":[{\"productExternalId\":\"33a8b4f9-4a6e-49c9-91df-ec7b40b3b1a1\",\"productName\":\"Camiseta DeveloperStore\",\"quantity\":4,\"unitPrice\":50.00},{\"productExternalId\":\"e7cb8e84-2c77-4020-bf2a-74cfce2b67cb\",\"productName\":\"Caneca DeveloperStore\",\"quantity\":10,\"unitPrice\":25.00}]}'
 ```
 
-Cancelar venda:
+Calculo esperado:
+
+- Camiseta: `4 * 50.00 = 200.00`, desconto 10%, total `180.00`.
+- Caneca: `10 * 25.00 = 250.00`, desconto 20%, total `200.00`.
+- Total da venda: `380.00`.
+
+### 4. Listar vendas
 
 ```powershell
-curl.exe -X PATCH "http://localhost:8080/api/sales/{saleId}/cancel" ^
-  -H "Authorization: Bearer {token}"
+curl.exe -i "http://localhost:8080/api/sales?page=1&pageSize=20" `
+  -H "Authorization: Bearer $TOKEN"
 ```
 
-## Exemplo Completo com PowerShell
+Com filtros:
 
 ```powershell
-$email = "sales.$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())@example.com"
-
-$userBody = @{
-  username = "salesuser"
-  password = "Sales@12345"
-  phone = "+5511999999999"
-  email = $email
-  status = 1
-  role = 1
-} | ConvertTo-Json
-
-Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/Users -ContentType "application/json" -Body $userBody
-
-$authBody = @{
-  email = $email
-  password = "Sales@12345"
-} | ConvertTo-Json
-
-$auth = Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/Auth -ContentType "application/json" -Body $authBody
-$headers = @{ Authorization = "Bearer $($auth.data.token)" }
-
-$saleNumber = "SALE-$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())"
-$saleBody = @{
-  saleNumber = $saleNumber
-  saleDate = "2026-05-26T12:00:00Z"
-  customerExternalId = "11111111-1111-1111-1111-111111111111"
-  customerName = "Cliente Exemplo"
-  branchExternalId = "22222222-2222-2222-2222-222222222222"
-  branchName = "Filial Centro"
-  items = @(@{
-    productExternalId = "33333333-3333-3333-3333-333333333333"
-    productName = "Produto Exemplo"
-    quantity = 10
-    unitPrice = 100
-  })
-} | ConvertTo-Json -Depth 5
-
-$sale = Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/sales -Headers $headers -ContentType "application/json" -Body $saleBody
-Invoke-RestMethod -Method Get -Uri "http://localhost:8080/api/sales?saleNumber=$saleNumber" -Headers $headers
-Invoke-RestMethod -Method Patch -Uri "http://localhost:8080/api/sales/$($sale.data.id)/cancel" -Headers $headers
+curl.exe -i "http://localhost:8080/api/sales?page=1&pageSize=20&isCancelled=false&fromDate=2026-01-01&toDate=2026-12-31" `
+  -H "Authorization: Bearer $TOKEN"
 ```
 
-## Migrations
+### 5. Consultar venda por id
 
-Criar nova migration:
+Substitua `<SALE_ID>` pelo `data.id` retornado na criacao.
 
 ```powershell
-dotnet ef migrations add NomeDaMigration --project src/Ambev.DeveloperEvaluation.ORM --startup-project src/Ambev.DeveloperEvaluation.WebApi --output-dir Migrations
+curl.exe -i http://localhost:8080/api/sales/<SALE_ID> `
+  -H "Authorization: Bearer $TOKEN"
 ```
 
-Aplicar migrations:
+### 6. Atualizar venda
 
 ```powershell
+curl.exe -i -X PUT http://localhost:8080/api/sales/<SALE_ID> `
+  -H "Content-Type: application/json" `
+  -H "Authorization: Bearer $TOKEN" `
+  -d '{\"saleNumber\":\"SALE-2026-000001\",\"saleDate\":\"2026-05-26T15:00:00Z\",\"customerExternalId\":\"5c9d7b1e-2a63-4e69-9c55-4c0e8142f8c1\",\"customerName\":\"Joao da Silva\",\"branchExternalId\":\"7a2b2c71-6c2e-4f54-8a7e-32159a4d53e2\",\"branchName\":\"Loja Centro - Sao Paulo\",\"items\":[{\"productExternalId\":\"33a8b4f9-4a6e-49c9-91df-ec7b40b3b1a1\",\"productName\":\"Camiseta DeveloperStore\",\"quantity\":9,\"unitPrice\":50.00}]}'
+```
+
+### 7. Cancelar item da venda
+
+Substitua `<ITEM_ID>` pelo id do item retornado na venda.
+
+```powershell
+curl.exe -i -X PATCH http://localhost:8080/api/sales/<SALE_ID>/items/<ITEM_ID>/cancel `
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Item cancelado nao compoe o total financeiro da venda.
+
+### 8. Cancelar venda
+
+```powershell
+curl.exe -i -X PATCH http://localhost:8080/api/sales/<SALE_ID>/cancel `
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Venda cancelada nao permite novas alteracoes de itens.
+
+### 9. Remover venda
+
+```powershell
+curl.exe -i -X DELETE http://localhost:8080/api/sales/<SALE_ID> `
+  -H "Authorization: Bearer $TOKEN"
+```
+
+`DELETE` remove fisicamente. Cancelamento comercial e feito em `PATCH /api/sales/{id}/cancel`.
+
+## Regras de negocio de Sales
+
+- 1 a 3 unidades do mesmo produto: 0% de desconto.
+- 4 a 9 unidades do mesmo produto: 10% de desconto.
+- 10 a 20 unidades do mesmo produto: 20% de desconto.
+- Acima de 20 unidades do mesmo produto: operacao invalida.
+- Produto duplicado na mesma venda nao e permitido.
+- Item cancelado nao entra no total da venda.
+- Venda cancelada nao permite alteracao de itens.
+- Desconto manual nao e aceito no request.
+
+## Rodar sem container para a API
+
+Suba somente a infraestrutura:
+
+```powershell
+docker compose up -d ambev.developerevaluation.database vault seq
+```
+
+Popule o Vault:
+
+```powershell
+$env:VAULT_ADDR="http://localhost:8200"
+$env:VAULT_TOKEN="dev-root-token"
+.\scripts\vault-init-dev.ps1
+```
+
+Opcionalmente, aplique migrations manualmente para diagnostico. A API tambem aplica migrations pendentes no startup:
+
+```powershell
+$env:ASPNETCORE_ENVIRONMENT="Development"
 dotnet ef database update --project src/Ambev.DeveloperEvaluation.ORM --startup-project src/Ambev.DeveloperEvaluation.WebApi
 ```
 
-A migration de Sales criada nesta entrega:
-
-```text
-20260526164733_AddSales
-```
-
-## Eventos de Vendas
-
-Eventos registrados em log:
-
-```text
-SaleCreated
-SaleModified
-SaleCancelled
-ItemCancelled
-```
-
-Eles sao logs estruturados na aplicacao. Nao ha publicacao real em broker nesta entrega.
-
-## Seguranca
-
-Implementado:
-
-- JWT Bearer.
-- Validacao de issuer.
-- Validacao de audience.
-- Validacao de lifetime.
-- Validacao de signing key.
-- Rejeicao de secret JWT fraco em Production.
-- Policies para Sales.
-- CORS por ambiente.
-- HSTS/HTTPS por configuracao.
-- Security headers basicos.
-- CorrelationId via `X-Correlation-Id`.
-- Global exception middleware.
-
-## Tratamento de Erros e CancellationToken
-
-Erros HTTP sao tratados pelo `GlobalExceptionMiddleware`, com envelope padronizado:
-
-```json
-{
-  "success": false,
-  "message": "Mensagem segura em portugues.",
-  "errors": [],
-  "correlationId": "a94fb91b-63e4-46c6-bd3d-82a89f7e1a4d",
-  "timestamp": "2026-05-26T14:30:00Z"
-}
-```
-
-Mapeamento principal:
-
-```text
-ValidationException          -> 400
-DomainException              -> 400
-BusinessRuleException        -> 400
-KeyNotFoundException         -> 404
-UnauthorizedAccessException  -> 401
-InvalidOperationException    -> 400
-OperationCanceledException   -> 499 quando cancelada pelo cliente
-TimeoutException             -> 408
-DbUpdateConcurrencyException -> 409
-DbUpdateException            -> 500 com mensagem segura
-Exception                    -> 500 com mensagem segura
-```
-
-`X-Correlation-Id` pode ser enviado pelo cliente. Se nao for enviado, a API gera um valor e devolve o mesmo header na resposta.
-
-O `CancellationToken` e propagado de controllers para MediatR, validators, handlers, repositories e EF Core. Cancelamento do cliente nao deve virar erro 500 generico.
-
-Logs nao devem registrar senha, JWT, header Authorization, connection string ou segredo.
-
-## Observabilidade, Rastreabilidade e Fallback de Logs
-
-Implementado nesta branch:
-
-- Serilog como logger principal.
-- Console JSON sempre ativo.
-- Datadog Agent no Docker coletando stdout/stderr dos containers.
-- Seq no Docker como unico fallback local pesquisavel.
-- Sem File Sink.
-- Sem Loki, Elasticsearch, OpenSearch ou Application Insights.
-- Logs HTTP positivos e negativos com correlationId, traceId, usuario, path, metodo, status code, duracao, IP e user-agent.
-- Logs de auditoria tecnica para Auth, Users e Sales.
-- Sanitizacao com `SensitiveDataMasker`.
-
-Subir tudo:
+Rode a API:
 
 ```powershell
-cd template/backend
-docker compose up --build
+$env:ASPNETCORE_ENVIRONMENT="Development"
+dotnet run --project src/Ambev.DeveloperEvaluation.WebApi
 ```
 
-Configurar Datadog:
-
-```powershell
-copy .env.example .env
-```
-
-Edite `.env` e informe:
+Abra:
 
 ```text
-DD_API_KEY=sua_chave_datadog
-DD_SITE=datadoghq.com
+http://localhost:5119/swagger
 ```
 
-Sem `DD_API_KEY`, o Agent pode nao enviar logs ao Datadog, mas a API e o Seq continuam funcionando.
+## Testes
 
-Acessar Seq:
+Comandos:
+
+```powershell
+dotnet restore .\Ambev.DeveloperEvaluation.sln
+dotnet build .\Ambev.DeveloperEvaluation.sln --configuration Release --no-restore
+dotnet test .\Ambev.DeveloperEvaluation.sln --configuration Release --no-build
+```
+
+Estado atual do projeto:
+
+- `tests/Ambev.DeveloperEvaluation.Unit` contem testes unitarios.
+- A validacao recente da branch `develop` executou 101 testes unitarios com sucesso.
+- `tests/Ambev.DeveloperEvaluation.Functional` e `tests/Ambev.DeveloperEvaluation.Integration` existem na solution, mas podem aparecer sem testes descobertos.
+
+## Composicao de dependencias
+
+A composicao da aplicacao fica centralizada no projeto `src/Ambev.DeveloperEvaluation.IoC`.
+
+Arquivos principais:
+
+```text
+src/Ambev.DeveloperEvaluation.IoC/DependencyResolver.cs
+src/Ambev.DeveloperEvaluation.IoC/ModuleInitializers/ApplicationModuleInitializer.cs
+src/Ambev.DeveloperEvaluation.IoC/ModuleInitializers/InfrastructureModuleInitializer.cs
+```
+
+Responsabilidades atuais:
+
+- `ApplicationModuleInitializer`: registra MediatR, AutoMapper, FluentValidation, pipeline behaviors e servicos de aplicacao.
+- `InfrastructureModuleInitializer`: registra `DefaultContext`, repositories, cache, invalidacao de cache, metricas e OpenTelemetry.
+- `WebApiServiceExtensions`: mantem configuracoes HTTP da WebApi, como controllers, endpoints, Swagger, CORS, rate limiting, JWT, authorization, health checks e middlewares.
+
+O `Program.cs` permanece limpo e restrito ao bootstrap: carregar configuracoes, montar a aplicacao, aplicar migrations pendentes e iniciar o host.
+
+## Ambientes
+
+### Development
+
+Arquivo:
+
+```text
+src/Ambev.DeveloperEvaluation.WebApi/appsettings.Development.json
+```
+
+Caracteristicas:
+
+- Swagger habilitado.
+- Detailed errors habilitados.
+- Vault local opcional.
+- Fallback controlado para appsettings/env vars.
+- CORS local.
+- Seq habilitado.
+
+Rodar:
+
+```powershell
+$env:ASPNETCORE_ENVIRONMENT="Development"
+dotnet run --project src/Ambev.DeveloperEvaluation.WebApi
+```
+
+### UAT
+
+Arquivo:
+
+```text
+src/Ambev.DeveloperEvaluation.WebApi/appsettings.Uat.json
+```
+
+Rodar:
+
+```powershell
+$env:ASPNETCORE_ENVIRONMENT="Uat"
+dotnet run --project src/Ambev.DeveloperEvaluation.WebApi
+```
+
+UAT usa valores fortes de simulacao para a prova. Em ambiente real, sobrescreva segredos por variaveis de ambiente.
+
+### Production
+
+Arquivo:
+
+```text
+src/Ambev.DeveloperEvaluation.WebApi/appsettings.Production.json
+```
+
+Production nao possui segredo real commitado. Para simular localmente, configure variaveis:
+
+```powershell
+$env:ASPNETCORE_ENVIRONMENT="Production"
+$env:ConnectionStrings__DefaultConnection="Host=prod-postgres.internal;Port=5432;Database=developerstore;Username=prod_app;Password=Prod_Strong_9gT!41pL#2026"
+$env:Jwt__SecretKey="Prod_JwtSecret_2026_pZ9!mQ4#vL8@rT2%DeveloperStore"
+$env:Jwt__Issuer="DeveloperStore.Production"
+$env:Jwt__Audience="DeveloperStore.Api"
+$env:Security__AllowedOrigins__0="https://developerstore.example.com"
+dotnet run --project src/Ambev.DeveloperEvaluation.WebApi
+```
+
+Se faltar segredo obrigatorio ou houver valor fraco/local, a API falha no startup de proposito.
+
+## Segredos e Vault local
+
+Vault local:
+
+```text
+http://localhost:8200
+```
+
+Token dev:
+
+```text
+dev-root-token
+```
+
+Caminho dos segredos:
+
+```text
+secret/developerstore/development
+```
+
+Valores gravados pelo script:
+
+```text
+Jwt__SecretKey=DevOnly_JwtSecret_2026_pZ9!mQ4#vL8@rT2%DeveloperStore
+Jwt__Issuer=DeveloperStore.Development
+Jwt__Audience=DeveloperStore.Api
+ConnectionStrings__DefaultConnection=Host=ambev.developerevaluation.database;Port=5432;Database=developer_evaluation;Username=developerstore_app;Password=DevOnly_Pg_9fR!42sL#2026_Strong
+```
+
+Consultar o Vault via container:
+
+```powershell
+docker exec -e VAULT_ADDR=http://127.0.0.1:8200 -e VAULT_TOKEN=dev-root-token developerstore-vault vault kv get secret/developerstore/development
+```
+
+Estes valores sao somente para prova de conceito local.
+
+## Observabilidade
+
+## reCAPTCHA v3 simulado
+
+A prova inclui protecao anti-bot em modo simulado, sem Google real, sem chave real, sem internet e sem servico externo.
+
+Endpoints protegidos quando `Recaptcha__Enabled=true`:
+
+- `POST /api/Auth`
+- `POST /api/Users`
+
+Por padrao em Development a protecao fica desabilitada para facilitar a avaliacao:
+
+```powershell
+$env:RECAPTCHA_ENABLED="false"
+$env:VITE_RECAPTCHA_ENABLED="false"
+docker compose up --build -d
+```
+
+Para demonstrar a protecao simulada no Docker:
+
+```powershell
+$env:RECAPTCHA_ENABLED="true"
+$env:VITE_RECAPTCHA_ENABLED="true"
+docker compose up --build -d ambev.developerevaluation.webapi frontend
+```
+
+Formato do token simulado:
+
+```text
+simulated:{action}:{unixTimestampSeconds}:{nonce}
+```
+
+Actions usadas:
+
+- Login: `login`
+- Criacao de usuario: `create_user`
+
+O frontend gera o token apenas no submit e nao salva em `localStorage`. O backend valida prefixo, action, expiracao e score simulado. Para simular falha:
+
+```powershell
+$env:RECAPTCHA_ENABLED="true"
+$env:Recaptcha__Simulated__ForceFailure="true"
+$env:VITE_RECAPTCHA_ENABLED="true"
+docker compose up --build -d ambev.developerevaluation.webapi frontend
+```
+
+Documentacao detalhada: [reCAPTCHA simulado](docs/security-recaptcha.md).
+
+Seq:
 
 ```text
 http://localhost:5341
 ```
 
-Pesquisar por correlationId no Seq:
-
-```text
-CorrelationId = '11111111-1111-1111-1111-111111111111'
-```
-
-Pesquisar por usuario:
-
-```text
-UserId = 'user-id'
-```
-
-Pesquisar por venda:
-
-```text
-SaleId = 'sale-id'
-SaleNumber = 'SALE-2026-000001'
-```
-
-Enviar correlationId manualmente:
+Datadog Agent:
 
 ```powershell
-curl.exe -i -H "X-Correlation-Id: 11111111-1111-1111-1111-111111111111" http://localhost:8080/health/live
+docker compose up -d datadog-agent
 ```
 
-Se Datadog estiver indisponivel, a API continua escrevendo logs no console. Se Seq estiver indisponivel, a API continua funcionando porque o sink e assíncrono. Seq e o unico fallback local desta entrega.
-
-## Commits da Implementacao
-
-Principais commits da entrega:
+Para enviar logs reais ao Datadog, crie um `.env` baseado em `.env.example`:
 
 ```text
-feature: preparar develop e atualizar pacotes seguros
-feature: separar ambientes development uat e production
-feature: adicionar estabilidade seguranca e health checks
-feature: implementar dominio de vendas e regras de desconto
-feature: adicionar persistencia de vendas com postgresql
-feature: implementar casos de uso de vendas
-feature: expor endpoints de vendas
-feature: registrar eventos de vendas em log
-feature: documentar api de vendas no swagger
-feature: adicionar testes unitarios de vendas
-feature: documentar execucao ambientes e validacao do projeto
-feature: ajustar validacao final da entrega
-feature: ajustar smoke test de autenticacao e vendas
-feature: atualizar documentacao oficial da prova
-feature: melhorar configuracao openapi do swagger
-feature: documentar endpoints de vendas no swagger
-feature: documentar autenticacao e seguranca no swagger
+DD_API_KEY=coloque_sua_api_key_datadog_aqui
+DD_SITE=datadoghq.com
+DD_ENV=development
+DD_SERVICE=developerstore-sales-api
+DD_VERSION=1.0.0
 ```
 
-## Documentacao Complementar
+Sem `DD_API_KEY` real, a API continua funcionando e Seq continua sendo o fallback local pesquisavel.
 
-Pasta `.doc`:
+Pesquisas uteis no Seq:
 
 ```text
-.doc/overview.md
-.doc/tech-stack.md
-.doc/frameworks.md
-.doc/general-api.md
-.doc/sales-api.md
-.doc/project-structure.md
+correlationId = '22222222-2222-2222-2222-222222222222'
+requestPath like '%sales%'
+saleNumber = 'SALE-2026-000001'
 ```
 
-Pasta backend:
+## Stack enterprise local
 
-```text
-template/backend/docs/architecture.md
-template/backend/docs/environments.md
-template/backend/docs/logging.md
-template/backend/docs/observability.md
-template/backend/docs/resilience.md
-template/backend/docs/security.md
-template/backend/docs/swagger.md
-```
-
-## Checklist Para Avaliacao
-
-Antes de enviar o link do GitHub, valide:
+O modo simples continua funcionando com:
 
 ```powershell
-cd template/backend
-dotnet restore
-dotnet build --configuration Release --no-restore
-dotnet test --configuration Release
-docker compose up --build
+docker compose up --build -d
 ```
 
-Em outro terminal:
+No modo simples, tambem existe container do Datadog Agent no compose. Ele nao e obrigatorio para a API funcionar; sem `DD_API_KEY` real, os logs continuam disponiveis no console e no Seq.
+
+O modo enterprise local adiciona Redis, Prometheus, Grafana, postgres-exporter e redis-exporter. Para ativar cache Redis na API, defina `CACHE_ENABLED=true` antes de subir a stack:
 
 ```powershell
+$env:CACHE_ENABLED="true"
+docker compose --profile enterprise up --build -d
+```
+
+Validar endpoints:
+
+```powershell
+curl.exe -i http://localhost:8080/health/cache
+curl.exe -i http://localhost:8080/health/metrics
+curl.exe -i http://localhost:8080/metrics
+```
+
+URLs:
+
+```text
+Prometheus: http://localhost:9090
+Grafana:    http://localhost:3000
+Redis:      localhost:6379
+```
+
+Grafana local:
+
+```text
+usuario: admin
+senha:   developerstore
+```
+
+Dashboards provisionados:
+
+- DeveloperStore API.
+- DeveloperStore Sales.
+- DeveloperStore Cache.
+- DeveloperStore PostgreSQL.
+
+Cache Redis:
+
+- Cacheia `GET /api/sales/{id}`.
+- Cacheia `GET /api/sales`.
+- Escritas invalidam detalhe da venda e incrementam a versao das listas.
+- Se Redis falhar, a API consulta PostgreSQL e registra warning.
+
+Para desligar o cache e voltar ao modo simples:
+
+```powershell
+Remove-Item Env:\CACHE_ENABLED -ErrorAction SilentlyContinue
+docker compose up --build -d
+```
+
+## Testes de carga com k6
+
+Scripts:
+
+```text
+tests/load/k6-smoke.js
+tests/load/k6-sales-read.js
+tests/load/k6-sales-write.js
+tests/load/k6-sales-mixed.js
+```
+
+Rodar smoke:
+
+```powershell
+docker compose --profile loadtest run --rm k6 run /scripts/k6-smoke.js
+```
+
+Rodar leitura:
+
+```powershell
+docker compose --profile loadtest run --rm k6 run /scripts/k6-sales-read.js
+```
+
+Rodar misto com token JWT:
+
+```powershell
+$env:K6_TOKEN="<TOKEN_JWT>"
+docker compose --profile loadtest run --rm k6 run /scripts/k6-sales-mixed.js
+```
+
+Variaveis:
+
+- `K6_BASE_URL`: URL base da API. Padrao no Docker: `http://ambev.developerevaluation.webapi:8080`.
+- `K6_TOKEN`: token JWT para endpoints protegidos.
+- `K6_SALE_ID`: id de venda para teste de detalhe.
+
+## Frontend React
+
+O projeto frontend fica em:
+
+```text
+template/frontend
+```
+
+Stack usada:
+
+- React, TypeScript e Vite.
+- React Router para rotas publicas e protegidas.
+- TanStack Query para server state, cache e invalidacao de Sales.
+- React Hook Form + Zod para formularios e validacoes.
+- Tailwind CSS com componentes no estilo shadcn/ui.
+- Motion for React para transicoes suaves.
+- Axios com client tipado, JWT Bearer e `X-Correlation-Id`.
+- Sonner para notificacoes.
+- Lucide React para icones.
+- Seletor de idioma com `PT-BR`, `EN` e `ES`.
+
+Rodar backend:
+
+```powershell
+cd C:\Users\Giovani\source\repos\mouts-challenge\template\backend
+docker compose up --build -d
+```
+
+Rodar frontend:
+
+```powershell
+cd C:\Users\Giovani\source\repos\mouts-challenge\template\frontend
+Copy-Item .env.example .env
+npm install
+npm run dev
+```
+
+Rodar frontend via Docker Compose:
+
+```powershell
+cd C:\Users\Giovani\source\repos\mouts-challenge\template\backend
+docker compose up --build -d frontend
+```
+
+Abrir:
+
+```text
+http://localhost:5173
+```
+
+Login rápido pelo botão demo:
+
+1. Acesse `http://localhost:5173/`.
+2. Na tela de login, clique em `Usar demo`.
+3. O formulário será preenchido com:
+
+```text
+E-mail: admin@developerstore.com
+Senha:  Senha@123456
+```
+
+4. Clique em `Entrar`.
+5. Após autenticar, o frontend abre o painel e passa a enviar o JWT automaticamente nas chamadas protegidas.
+
+Variaveis do frontend:
+
+```text
+VITE_API_BASE_URL=http://localhost:8080
+VITE_APP_NAME=DeveloperStore Frontend
+VITE_APP_ENV=development
+VITE_RECAPTCHA_ENABLED=false
+VITE_RECAPTCHA_PROVIDER=simulated
+VITE_RECAPTCHA_LOGIN_ACTION=login
+VITE_RECAPTCHA_CREATE_USER_ACTION=create_user
+```
+
+Comandos:
+
+```powershell
+npm run lint
+npm run build
+npm run preview
+```
+
+Telas implementadas:
+
+- `/login`: autenticacao via `POST /api/Auth`.
+- `/dashboard`: indicadores calculados sobre a pagina de vendas carregada e status da API.
+- `/sales`: listagem, filtros e paginacao.
+- `/sales/new`: criacao de venda.
+- `/sales/{id}`: detalhes, cancelamento de venda, cancelamento de item e remocao.
+- `/sales/{id}/edit`: edicao de venda ativa.
+- `/users/new`: criacao de usuario.
+- `/health`: consulta `/health/live`, `/health/ready`, `/health/logging`, `/health/cache` e `/health/metrics`.
+
+Fluxo de avaliacao:
+
+1. Suba o backend com Docker.
+2. Rode o frontend em `http://localhost:5173`.
+3. Na tela de login, clique em `Usar demo` e depois em `Entrar`.
+4. Se preferir, crie usuario pelo Swagger ou pela tela de usuario quando autenticado e autentique em `/login`.
+5. Crie, liste, filtre, edite, detalhe, cancele item, cancele venda e remova venda.
+6. Consulte dashboard e health page.
+
+O backend ja permite CORS para `http://localhost:5173` em Development.
+
+## Idiomas do frontend
+
+O frontend possui uma barra de idioma visivel na tela de login e no topo da area autenticada.
+
+Idiomas disponiveis:
+
+```text
+PT-BR: portugues do Brasil
+EN: ingles
+ES: espanhol
+```
+
+Implementacao:
+
+```text
+../frontend/src/shared/components/layout/LanguageSelector.tsx
+../frontend/src/shared/i18n/translations.ts
+../frontend/src/shared/i18n/language-context.tsx
+../frontend/src/shared/i18n/use-language.ts
+```
+
+Comportamento:
+
+- O idioma padrao e `PT-BR`.
+- A selecao fica salva no `localStorage` com a chave `developerstore.language`.
+- O seletor altera textos do menu, login, dashboard, health, usuarios, vendas, validacoes, mensagens de erro e notificacoes.
+- O backend continua expondo a API em portugues no Swagger; a troca de idioma e uma responsabilidade do frontend.
+
+Mapeamento visual:
+
+| Botao | Idioma aplicado |
+| --- | --- |
+| `PT-BR` | Portugues do Brasil |
+| `EN` | Ingles |
+| `ES` | Espanhol |
+
+Para validar:
+
+1. Acesse `http://localhost:5173`.
+2. Use a barra no canto superior direito da tela.
+3. Clique em `EN` para exibir a interface em ingles.
+4. Clique em `ES` para exibir a interface em espanhol.
+5. Clique em `PT-BR` para voltar ao portugues.
+
+## Estrutura principal
+
+```text
+src/Ambev.DeveloperEvaluation.WebApi
+src/Ambev.DeveloperEvaluation.Application
+src/Ambev.DeveloperEvaluation.Domain
+src/Ambev.DeveloperEvaluation.ORM
+src/Ambev.DeveloperEvaluation.Common
+src/Ambev.DeveloperEvaluation.IoC
+src/Ambev.DeveloperEvaluation.IoC/ModuleInitializers
+../frontend
+../frontend/src/features
+tests/Ambev.DeveloperEvaluation.Unit
+tests/Ambev.DeveloperEvaluation.Functional
+tests/Ambev.DeveloperEvaluation.Integration
+tests/load
+infra/prometheus
+infra/grafana
+docs
+scripts
+```
+
+## Documentacao complementar
+
+- [Arquitetura](docs/architecture.md)
+- [Ambientes](docs/environments.md)
+- [Swagger](docs/swagger.md)
+- [Seguranca](docs/security.md)
+- [reCAPTCHA simulado](docs/security-recaptcha.md)
+- [Segredos](docs/secrets.md)
+- [Observabilidade](docs/observability.md)
+- [Observabilidade local](docs/observability-local.md)
+- [Logs](docs/logging.md)
+- [Resiliencia](docs/resilience.md)
+- [Cache](docs/cache.md)
+- [Performance](docs/performance.md)
+- [Testes de carga](docs/load-testing.md)
+
+## Troubleshooting
+
+### PostgreSQL nao aceita usuario/senha
+
+Provavel volume antigo. Reset:
+
+```powershell
+docker compose down --volumes --remove-orphans
+docker compose up -d ambev.developerevaluation.database vault seq
+$env:VAULT_ADDR="http://localhost:8200"
+$env:VAULT_TOKEN="dev-root-token"
+.\scripts\vault-init-dev.ps1
+$env:ASPNETCORE_ENVIRONMENT="Development"
 dotnet ef database update --project src/Ambev.DeveloperEvaluation.ORM --startup-project src/Ambev.DeveloperEvaluation.WebApi
-curl.exe -i http://localhost:8080/health/live
-curl.exe -i http://localhost:8080/health/ready
+docker compose up --build -d ambev.developerevaluation.webapi
 ```
 
-Depois abra:
+### Vault nao esta pronto
+
+Rode novamente:
+
+```powershell
+.\scripts\vault-init-dev.ps1
+```
+
+O script tenta aguardar o Vault antes de gravar os segredos.
+
+### Swagger nao abre
+
+Confira se a API esta viva:
+
+```powershell
+docker logs --tail 100 ambev_developer_evaluation_webapi
+curl.exe -i http://localhost:8080/health/live
+```
+
+### Health ready falha
+
+Veja logs da API:
+
+```powershell
+docker logs --tail 200 ambev_developer_evaluation_webapi
+```
+
+Verifique se as migrations foram aplicadas:
+
+```powershell
+$env:ASPNETCORE_ENVIRONMENT="Development"
+dotnet ef database update --project src/Ambev.DeveloperEvaluation.ORM --startup-project src/Ambev.DeveloperEvaluation.WebApi
+```
+
+### Erro 401 em Sales
+
+Crie usuario, autentique em `/api/Auth`, copie `data.token` e envie:
 
 ```text
-http://localhost:8080/swagger
+Authorization: Bearer <TOKEN>
 ```
 
-## Observacoes
+### Erro 403 em Sales
 
-- O projeto esta preparado para avaliacao local via Docker.
-- O `appsettings.Production.json` nao contem segredo real.
-- O banco padrao local usa usuario e senha apenas para desenvolvimento.
-- Para reiniciar a base local do zero, use `docker compose down -v` e aplique migrations novamente.
+Use usuario com role `Admin` no cadastro:
+
+```json
+"role": 3
+```
+
+### Porta 8080 ou 5432 ocupada
+
+Verifique containers existentes:
+
+```powershell
+docker ps
+```
+
+Pare a stack:
+
+```powershell
+docker compose down
+```
+
+## Links locais
+
+- API Docker: `http://localhost:8080`
+- Swagger Docker: `http://localhost:8080/swagger`
+- API via `dotnet run`: `http://localhost:5119`
+- Swagger via `dotnet run`: `http://localhost:5119/swagger`
+- Seq: `http://localhost:5341`
+- Vault: `http://localhost:8200`
+- PostgreSQL: `localhost:5432`

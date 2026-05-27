@@ -363,3 +363,7 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 .idea
+
+# Local AI agent instructions must not be published
+AGENTS.md
+**/AGENTS.md
