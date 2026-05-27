@@ -119,6 +119,7 @@ public class SalesValidatorTests
             CustomerName = "Cliente",
             BranchExternalId = Guid.NewGuid(),
             BranchName = "Filial",
+            CreatedByUserId = Guid.NewGuid(),
             Items = [CreateValidItem()]
         };
     }

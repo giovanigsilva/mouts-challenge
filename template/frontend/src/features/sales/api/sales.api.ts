@@ -1,6 +1,6 @@
 import { apiClient, unwrapApiData } from '@/shared/api/api-client'
 import type { ApiEnvelope } from '@/shared/types/api-response'
-import type { Sale, SaleRequest, SalesFilters, SalesPage } from '@/features/sales/types/sale.types'
+import type { Sale, SaleRequest, SalesByUserReportItem, SalesFilters, SalesPage } from '@/features/sales/types/sale.types'
 
 type BackendPaginatedResponse<T> = ApiEnvelope<T[]> & {
   currentPage: number
@@ -51,6 +51,14 @@ export async function cancelSale(id: string) {
 
 export async function cancelSaleItem(id: string, itemId: string) {
   const response = await apiClient.patch<ApiEnvelope<Sale>>(`/api/sales/${id}/items/${itemId}/cancel`)
+
+  return unwrapApiData(response.data)
+}
+
+export async function getSalesByUserReport(filters: { fromDate?: string; toDate?: string } = {}) {
+  const response = await apiClient.get<ApiEnvelope<SalesByUserReportItem[]>>('/api/sales/reports/by-user', {
+    params: filters,
+  })
 
   return unwrapApiData(response.data)
 }

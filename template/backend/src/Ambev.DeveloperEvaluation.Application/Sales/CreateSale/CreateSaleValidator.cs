@@ -13,6 +13,7 @@ public class CreateSaleValidator : AbstractValidator<CreateSaleCommand>
         RuleFor(sale => sale.CustomerName).NotEmpty().MaximumLength(120).WithMessage("O nome do cliente e obrigatorio e deve ter no maximo 120 caracteres.");
         RuleFor(sale => sale.BranchExternalId).NotEmpty().WithMessage("O identificador externo da filial e obrigatorio.");
         RuleFor(sale => sale.BranchName).NotEmpty().MaximumLength(120).WithMessage("O nome da filial e obrigatorio e deve ter no maximo 120 caracteres.");
+        RuleFor(sale => sale.CreatedByUserId).NotEmpty().WithMessage("O usuario responsavel pela venda e obrigatorio.");
         RuleFor(sale => sale.Items).NotEmpty().WithMessage("A venda deve possuir ao menos um item.");
         RuleForEach(sale => sale.Items).SetValidator(new SaleItemInputValidator());
         RuleFor(sale => sale.Items)

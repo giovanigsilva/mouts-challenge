@@ -11,5 +11,6 @@ public class CreateSaleCommand : IRequest<SaleResult>
     public string CustomerName { get; set; } = string.Empty;
     public Guid BranchExternalId { get; set; }
     public string BranchName { get; set; } = string.Empty;
+    public Guid CreatedByUserId { get; set; }
     public IEnumerable<SaleItemInput> Items { get; set; } = [];
 }

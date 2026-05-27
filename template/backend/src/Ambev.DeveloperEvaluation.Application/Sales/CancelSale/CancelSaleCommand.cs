@@ -6,4 +6,5 @@ namespace Ambev.DeveloperEvaluation.Application.Sales.CancelSale;
 public class CancelSaleCommand : IRequest<SaleResult>
 {
     public Guid Id { get; set; }
+    public Guid CancelledByUserId { get; set; }
 }

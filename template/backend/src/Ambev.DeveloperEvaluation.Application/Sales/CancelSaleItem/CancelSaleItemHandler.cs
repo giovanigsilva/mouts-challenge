@@ -41,7 +41,7 @@ public class CancelSaleItemHandler : IRequestHandler<CancelSaleItemCommand, Sale
             throw new KeyNotFoundException($"Venda com ID {command.SaleId} nao encontrada.");
         }
 
-        sale.CancelItem(command.ItemId);
+        sale.CancelItem(command.ItemId, command.UpdatedByUserId);
         var updatedSale = await _saleRepository.UpdateAsync(sale, cancellationToken);
         await _salesCacheInvalidator.InvalidateAsync(updatedSale.Id, "CancelSaleItem", cancellationToken);
         _metrics.SaleItemCancelled();

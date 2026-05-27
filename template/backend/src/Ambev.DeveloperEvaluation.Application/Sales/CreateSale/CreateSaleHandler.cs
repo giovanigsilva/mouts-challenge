@@ -45,7 +45,7 @@ public class CreateSaleHandler : IRequestHandler<CreateSaleCommand, SaleResult>
         }
 
         var items = command.Items.Select(item => new SaleItem(item.ProductExternalId, item.ProductName, item.Quantity, item.UnitPrice));
-        var sale = new Sale(command.SaleNumber, command.SaleDate, command.CustomerExternalId, command.CustomerName, command.BranchExternalId, command.BranchName, items);
+        var sale = new Sale(command.SaleNumber, command.SaleDate, command.CustomerExternalId, command.CustomerName, command.BranchExternalId, command.BranchName, command.CreatedByUserId, items);
         var createdSale = await _saleRepository.CreateAsync(sale, cancellationToken);
         await _salesCacheInvalidator.InvalidateAsync(createdSale.Id, "CreateSale", cancellationToken);
         _metrics.SaleCreated();

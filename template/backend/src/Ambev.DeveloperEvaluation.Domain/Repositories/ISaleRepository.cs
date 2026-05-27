@@ -1,4 +1,5 @@
 using Ambev.DeveloperEvaluation.Domain.Entities;
+using Ambev.DeveloperEvaluation.Domain.Reports;
 
 namespace Ambev.DeveloperEvaluation.Domain.Repositories;
 
@@ -11,4 +12,5 @@ public interface ISaleRepository
     Task<Sale> UpdateAsync(Sale sale, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<IEnumerable<SalesByUserReport>> GetSalesByUserReportAsync(DateTime? fromDate, DateTime? toDate, CancellationToken cancellationToken = default);
 }

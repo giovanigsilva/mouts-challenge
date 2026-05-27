@@ -35,6 +35,8 @@ Este README foi escrito para o avaliador clonar o repositorio e inicializar a AP
 - Auth com JWT.
 - Users.
 - CRUD completo de Sales.
+- Rastreabilidade de vendas por usuario autenticado.
+- Relatorio administrativo de vendas por funcionario.
 - Cancelamento de venda.
 - Cancelamento de item.
 - Regras de desconto por quantidade no dominio.
@@ -266,6 +268,9 @@ erDiagram
         varchar BranchName
         numeric TotalAmount
         boolean IsCancelled
+        uuid CreatedByUserId FK
+        uuid UpdatedByUserId FK
+        uuid CancelledByUserId FK
         timestamptz CreatedAt
         timestamptz UpdatedAt
     }
@@ -286,14 +291,17 @@ erDiagram
     }
 
     Sales ||--o{ SaleItems : possui
+    Users ||--o{ Sales : criou
+    Users ||--o{ Sales : atualizou
+    Users ||--o{ Sales : cancelou
 ```
 
 ### Correlacoes entre dominio e banco
 
 | Dominio | Tabela | Relacionamento | Observacao |
 | --- | --- | --- | --- |
-| `User` | `Users` | Sem FK para vendas | Usado por Auth/Users. A autenticacao gera JWT, mas vendas nao armazenam `UserId`. |
-| `Sale` | `Sales` | Raiz do agregado | Armazena cabecalho da venda e snapshots de cliente e filial. |
+| `User` | `Users` | FK operacional em `Sales` | Usado por Auth/Users. A venda registra usuario criador, ultimo atualizador e cancelador. |
+| `Sale` | `Sales` | Raiz do agregado | Armazena cabecalho da venda, snapshots de cliente/filial e usuarios responsaveis. |
 | `SaleItem` | `SaleItems` | `SaleItems.SaleId -> Sales.Id` | Itens pertencem a uma venda. O delete da venda remove os itens por cascade. |
 | Customer externo | Colunas em `Sales` | Sem tabela local | `CustomerExternalId` e `CustomerName` sao snapshot denormalizado. |
 | Branch externa | Colunas em `Sales` | Sem tabela local | `BranchExternalId` e `BranchName` sao snapshot denormalizado. |
@@ -348,6 +356,9 @@ BranchExternalId uuid not null
 BranchName varchar(120) not null
 TotalAmount numeric(18,2) not null
 IsCancelled boolean not null
+CreatedByUserId uuid FK -> Users.Id not null
+UpdatedByUserId uuid FK -> Users.Id null
+CancelledByUserId uuid FK -> Users.Id null
 CreatedAt timestamp with time zone not null
 UpdatedAt timestamp with time zone null
 ```
@@ -360,6 +371,9 @@ IX_Sales_CustomerExternalId
 IX_Sales_BranchExternalId
 IX_Sales_SaleDate
 IX_Sales_IsCancelled
+IX_Sales_CreatedByUserId
+IX_Sales_UpdatedByUserId
+IX_Sales_CancelledByUserId
 ```
 
 Mapeamento:
@@ -374,6 +388,9 @@ Sale.BranchExternalId   -> Sales.BranchExternalId
 Sale.BranchName         -> Sales.BranchName
 Sale.TotalAmount        -> Sales.TotalAmount
 Sale.IsCancelled        -> Sales.IsCancelled
+Sale.CreatedByUserId    -> Sales.CreatedByUserId
+Sale.UpdatedByUserId    -> Sales.UpdatedByUserId
+Sale.CancelledByUserId  -> Sales.CancelledByUserId
 Sale.CreatedAt          -> Sales.CreatedAt
 Sale.UpdatedAt          -> Sales.UpdatedAt
 Sale.Items              -> SaleItems via SaleItems.SaleId
@@ -431,11 +448,15 @@ Relacionamento:
 Sales 1:N SaleItems
 SaleItems.SaleId -> Sales.Id
 DeleteBehavior: Cascade
+Users 1:N Sales por Sales.CreatedByUserId
+Users 1:N Sales por Sales.UpdatedByUserId
+Users 1:N Sales por Sales.CancelledByUserId
+DeleteBehavior de Users para Sales: Restrict
 ```
 
 Observacoes importantes:
 
-- `Users` nao possui relacionamento direto com `Sales`.
+- `Users` possui relacionamento operacional com `Sales` para rastrear criacao, ultima atualizacao e cancelamento.
 - Nao existem tabelas `Customers`, `Branches` ou `Products`.
 - Sales usa snapshot denormalizado por external identity: `CustomerExternalId`, `CustomerName`, `BranchExternalId`, `BranchName`, `ProductExternalId` e `ProductName`.
 - Eventos de dominio existem no dominio, mas nao sao persistidos em tabela.
@@ -450,16 +471,17 @@ Users possui:
 Id uuid PK, Username varchar(50), Password varchar(100), Phone varchar(20), Email varchar(100), Status varchar(20), Role varchar(20), CreatedAt timestamptz, UpdatedAt timestamptz nullable.
 
 Sales possui:
-Id uuid PK, SaleNumber varchar(60) unique, SaleDate timestamptz, CustomerExternalId uuid, CustomerName varchar(120), BranchExternalId uuid, BranchName varchar(120), TotalAmount numeric(18,2), IsCancelled boolean, CreatedAt timestamptz, UpdatedAt timestamptz nullable.
+Id uuid PK, SaleNumber varchar(60) unique, SaleDate timestamptz, CustomerExternalId uuid, CustomerName varchar(120), BranchExternalId uuid, BranchName varchar(120), TotalAmount numeric(18,2), IsCancelled boolean, CreatedByUserId uuid FK para Users.Id, UpdatedByUserId uuid nullable FK para Users.Id, CancelledByUserId uuid nullable FK para Users.Id, CreatedAt timestamptz, UpdatedAt timestamptz nullable.
 
 SaleItems possui:
 Id uuid PK, SaleId uuid FK para Sales.Id, ProductExternalId uuid, ProductName varchar(120), Quantity integer, UnitPrice numeric(18,2), DiscountPercentage numeric(5,2), DiscountAmount numeric(18,2), TotalAmount numeric(18,2), IsCancelled boolean, CreatedAt timestamptz, UpdatedAt timestamptz nullable.
 
 Relacionamento:
 Sales 1:N SaleItems, com cascade delete.
+Users 1:N Sales por CreatedByUserId, UpdatedByUserId e CancelledByUserId, com delete restrict.
 
 Observacoes:
-Users nao se relaciona com Sales.
+Users se relaciona com Sales para rastrear qual usuario criou, atualizou ou cancelou cada venda.
 Nao existem tabelas Customer, Branch ou Product.
 Sales guarda snapshots denormalizados de cliente, filial e produto atraves de ExternalId e Name.
 ```
@@ -585,6 +607,31 @@ Substitua `<SALE_ID>` pelo `data.id` retornado na criacao.
 curl.exe -i http://localhost:8080/api/sales/<SALE_ID> `
   -H "Authorization: Bearer $TOKEN"
 ```
+
+### 5.1 Relatorio administrativo de vendas por usuario
+
+Disponivel apenas para usuarios com role `Admin`.
+
+```powershell
+curl.exe -i "http://localhost:8080/api/sales/reports/by-user" `
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Com periodo:
+
+```powershell
+curl.exe -i "http://localhost:8080/api/sales/reports/by-user?fromDate=2026-01-01&toDate=2026-12-31" `
+  -H "Authorization: Bearer $TOKEN"
+```
+
+O relatorio retorna, por usuario:
+
+- identificador, nome, e-mail e perfil;
+- total de vendas realizadas;
+- vendas confirmadas;
+- vendas canceladas;
+- valor total vendido;
+- primeira e ultima data de venda no periodo.
 
 ### 6. Atualizar venda
 
@@ -1077,6 +1124,7 @@ Telas implementadas:
 - `/dashboard`: indicadores calculados sobre a pagina de vendas carregada e status da API.
 - `/sales`: listagem, filtros e paginacao.
 - `/sales/new`: criacao de venda.
+- `/sales/reports/users`: relatorio administrativo de vendas por funcionario, visivel no menu para usuarios `Admin`.
 - `/sales/{id}`: detalhes, cancelamento de venda, cancelamento de item e remocao.
 - `/sales/{id}/edit`: edicao de venda ativa.
 - `/users/new`: criacao de usuario.

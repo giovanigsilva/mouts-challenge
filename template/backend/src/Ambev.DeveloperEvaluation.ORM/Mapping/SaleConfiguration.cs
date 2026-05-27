@@ -19,6 +19,9 @@ public class SaleConfiguration : IEntityTypeConfiguration<Sale>
         builder.Property(sale => sale.BranchName).IsRequired().HasMaxLength(120);
         builder.Property(sale => sale.TotalAmount).HasPrecision(18, 2);
         builder.Property(sale => sale.IsCancelled).IsRequired();
+        builder.Property(sale => sale.CreatedByUserId).IsRequired();
+        builder.Property(sale => sale.UpdatedByUserId);
+        builder.Property(sale => sale.CancelledByUserId);
 
         builder.Ignore(sale => sale.DomainEvents);
 
@@ -27,6 +30,24 @@ public class SaleConfiguration : IEntityTypeConfiguration<Sale>
         builder.HasIndex(sale => sale.BranchExternalId);
         builder.HasIndex(sale => sale.SaleDate);
         builder.HasIndex(sale => sale.IsCancelled);
+        builder.HasIndex(sale => sale.CreatedByUserId);
+        builder.HasIndex(sale => sale.UpdatedByUserId);
+        builder.HasIndex(sale => sale.CancelledByUserId);
+
+        builder.HasOne<User>()
+            .WithMany()
+            .HasForeignKey(sale => sale.CreatedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<User>()
+            .WithMany()
+            .HasForeignKey(sale => sale.UpdatedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<User>()
+            .WithMany()
+            .HasForeignKey(sale => sale.CancelledByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(sale => sale.Items)
             .WithOne()

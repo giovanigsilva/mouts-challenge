@@ -16,6 +16,9 @@ public class Sale : BaseEntity
     public string BranchName { get; private set; } = string.Empty;
     public decimal TotalAmount { get; private set; }
     public bool IsCancelled { get; private set; }
+    public Guid CreatedByUserId { get; private set; }
+    public Guid? UpdatedByUserId { get; private set; }
+    public Guid? CancelledByUserId { get; private set; }
     public IReadOnlyCollection<SaleItem> Items => _items.AsReadOnly();
     public IReadOnlyCollection<object> DomainEvents => _domainEvents.AsReadOnly();
 
@@ -23,37 +26,41 @@ public class Sale : BaseEntity
     {
     }
 
-    public Sale(string saleNumber, DateTime saleDate, Guid customerExternalId, string customerName, Guid branchExternalId, string branchName, IEnumerable<SaleItem> items)
+    public Sale(string saleNumber, DateTime saleDate, Guid customerExternalId, string customerName, Guid branchExternalId, string branchName, Guid createdByUserId, IEnumerable<SaleItem> items)
     {
         Id = Guid.NewGuid();
         CreatedAt = DateTime.UtcNow;
+        SetCreatedBy(createdByUserId);
         SetHeader(saleNumber, saleDate, customerExternalId, customerName, branchExternalId, branchName);
         ReplaceItems(items);
         AddDomainEvent(new SaleCreatedEvent(this));
     }
 
-    public void Update(string saleNumber, DateTime saleDate, Guid customerExternalId, string customerName, Guid branchExternalId, string branchName, IEnumerable<SaleItem> items)
+    public void Update(string saleNumber, DateTime saleDate, Guid customerExternalId, string customerName, Guid branchExternalId, string branchName, Guid updatedByUserId, IEnumerable<SaleItem> items)
     {
         EnsureCanChangeItems();
+        SetUpdatedBy(updatedByUserId);
         SetHeader(saleNumber, saleDate, customerExternalId, customerName, branchExternalId, branchName);
         ReplaceItems(items);
         UpdatedAt = DateTime.UtcNow;
         AddDomainEvent(new SaleModifiedEvent(this));
     }
 
-    public void Cancel()
+    public void Cancel(Guid cancelledByUserId)
     {
         if (IsCancelled)
             throw new BusinessRuleException("Venda ja esta cancelada.");
 
+        SetCancelledBy(cancelledByUserId);
         IsCancelled = true;
         UpdatedAt = DateTime.UtcNow;
         AddDomainEvent(new SaleCancelledEvent(this));
     }
 
-    public void CancelItem(Guid itemId)
+    public void CancelItem(Guid itemId, Guid updatedByUserId)
     {
         EnsureCanChangeItems();
+        SetUpdatedBy(updatedByUserId);
 
         var item = _items.FirstOrDefault(current => current.Id == itemId);
         if (item is null)
@@ -117,6 +124,31 @@ public class Sale : BaseEntity
     {
         if (IsCancelled)
             throw new BusinessRuleException("Venda cancelada nao permite alteracao de itens.");
+    }
+
+    private void SetCreatedBy(Guid userId)
+    {
+        if (userId == Guid.Empty)
+            throw new BusinessRuleException("O usuario responsavel pela criacao da venda e obrigatorio.");
+
+        CreatedByUserId = userId;
+    }
+
+    private void SetUpdatedBy(Guid userId)
+    {
+        if (userId == Guid.Empty)
+            throw new BusinessRuleException("O usuario responsavel pela atualizacao da venda e obrigatorio.");
+
+        UpdatedByUserId = userId;
+    }
+
+    private void SetCancelledBy(Guid userId)
+    {
+        if (userId == Guid.Empty)
+            throw new BusinessRuleException("O usuario responsavel pelo cancelamento da venda e obrigatorio.");
+
+        CancelledByUserId = userId;
+        UpdatedByUserId = userId;
     }
 
     private void RecalculateTotal()

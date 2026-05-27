@@ -7,6 +7,7 @@ import { HealthPage } from '@/features/health/pages/HealthPage'
 import { SaleCreatePage } from '@/features/sales/pages/SaleCreatePage'
 import { SaleDetailsPage } from '@/features/sales/pages/SaleDetailsPage'
 import { SaleEditPage } from '@/features/sales/pages/SaleEditPage'
+import { SalesByUserReportPage } from '@/features/sales/pages/SalesByUserReportPage'
 import { SalesListPage } from '@/features/sales/pages/SalesListPage'
 import { CreateUserPage } from '@/features/users/pages/CreateUserPage'
 
@@ -33,6 +34,10 @@ export const router = createBrowserRouter([
       {
         path: '/sales/new',
         element: <SaleCreatePage />,
+      },
+      {
+        path: '/sales/reports/users',
+        element: <SalesByUserReportPage />,
       },
       {
         path: '/sales/:id',

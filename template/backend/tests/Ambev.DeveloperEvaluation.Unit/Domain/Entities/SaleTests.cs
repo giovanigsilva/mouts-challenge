@@ -51,7 +51,7 @@ public class SaleTests
         var secondItem = CreateItem(1, 50m);
         var sale = CreateSale([firstItem, secondItem]);
 
-        sale.CancelItem(firstItem.Id);
+        sale.CancelItem(firstItem.Id, Guid.NewGuid());
 
         sale.TotalAmount.Should().Be(50m);
     }
@@ -60,9 +60,9 @@ public class SaleTests
     public void Given_CancelledSale_When_UpdatingSale_Then_ShouldThrowBusinessRuleException()
     {
         var sale = CreateSale([CreateItem(1, 100m)]);
-        sale.Cancel();
+        sale.Cancel(Guid.NewGuid());
 
-        var action = () => sale.Update("SALE-2", DateTime.UtcNow, Guid.NewGuid(), "Cliente 2", Guid.NewGuid(), "Filial 2", [CreateItem(1, 100m)]);
+        var action = () => sale.Update("SALE-2", DateTime.UtcNow, Guid.NewGuid(), "Cliente 2", Guid.NewGuid(), "Filial 2", Guid.NewGuid(), [CreateItem(1, 100m)]);
 
         action.Should().Throw<BusinessRuleException>();
     }
@@ -72,7 +72,7 @@ public class SaleTests
     {
         var sale = CreateSale([CreateItem(1, 100m)]);
 
-        sale.Update("SALE-1", DateTime.UtcNow, Guid.NewGuid(), "Cliente", Guid.NewGuid(), "Filial", [CreateItem(10, 100m)]);
+        sale.Update("SALE-1", DateTime.UtcNow, Guid.NewGuid(), "Cliente", Guid.NewGuid(), "Filial", Guid.NewGuid(), [CreateItem(10, 100m)]);
 
         sale.TotalAmount.Should().Be(800m);
     }
@@ -90,7 +90,7 @@ public class SaleTests
     {
         var sale = CreateSale([CreateItem(1, 100m)]);
 
-        sale.Update("SALE-2", DateTime.UtcNow, Guid.NewGuid(), "Cliente 2", Guid.NewGuid(), "Filial 2", [CreateItem(2, 100m)]);
+        sale.Update("SALE-2", DateTime.UtcNow, Guid.NewGuid(), "Cliente 2", Guid.NewGuid(), "Filial 2", Guid.NewGuid(), [CreateItem(2, 100m)]);
 
         sale.DomainEvents.Should().Contain(domainEvent => domainEvent is SaleModifiedEvent);
     }
@@ -100,7 +100,7 @@ public class SaleTests
     {
         var sale = CreateSale([CreateItem(1, 100m)]);
 
-        sale.Cancel();
+        sale.Cancel(Guid.NewGuid());
 
         sale.DomainEvents.Should().Contain(domainEvent => domainEvent is SaleCancelledEvent);
     }
@@ -111,7 +111,7 @@ public class SaleTests
         var item = CreateItem(1, 100m);
         var sale = CreateSale([item]);
 
-        sale.CancelItem(item.Id);
+        sale.CancelItem(item.Id, Guid.NewGuid());
 
         sale.DomainEvents.Should().Contain(domainEvent => domainEvent is ItemCancelledEvent);
     }
@@ -123,6 +123,6 @@ public class SaleTests
 
     private static Sale CreateSale(IEnumerable<SaleItem> items)
     {
-        return new Sale("SALE-1", DateTime.UtcNow, Guid.NewGuid(), "Cliente", Guid.NewGuid(), "Filial", items);
+        return new Sale("SALE-1", DateTime.UtcNow, Guid.NewGuid(), "Cliente", Guid.NewGuid(), "Filial", Guid.NewGuid(), items);
     }
 }

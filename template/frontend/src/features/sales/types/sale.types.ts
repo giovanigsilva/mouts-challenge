@@ -33,6 +33,9 @@ export type Sale = {
   branchName: string
   totalAmount: number
   isCancelled: boolean
+  createdByUserId: string
+  updatedByUserId?: string | null
+  cancelledByUserId?: string | null
   createdAt: string
   updatedAt?: string | null
   items: SaleItem[]
@@ -54,4 +57,17 @@ export type SalesPage = {
   currentPage: number
   totalPages: number
   totalCount: number
+}
+
+export type SalesByUserReportItem = {
+  userId: string
+  username: string
+  email: string
+  role: number | string
+  totalSales: number
+  activeSales: number
+  cancelledSales: number
+  totalSoldAmount: number
+  firstSaleDate?: string | null
+  lastSaleDate?: string | null
 }

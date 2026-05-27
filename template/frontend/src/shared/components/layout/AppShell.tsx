@@ -1,4 +1,4 @@
-import { Activity, HeartPulse, LayoutDashboard, LogOut, Plus, ShoppingCart, UserPlus } from 'lucide-react'
+import { Activity, BarChart3, HeartPulse, LayoutDashboard, LogOut, Plus, ShoppingCart, UserPlus } from 'lucide-react'
 import type { PropsWithChildren } from 'react'
 import { NavLink } from 'react-router-dom'
 
@@ -13,17 +13,20 @@ const navItems = [
   { to: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard },
   { to: '/sales', labelKey: 'sales', icon: ShoppingCart },
   { to: '/sales/new', labelKey: 'newSale', icon: Plus },
+  { to: '/sales/reports/users', labelKey: 'salesByUserReport', icon: BarChart3, adminOnly: true },
   { to: '/users/new', labelKey: 'createUser', icon: UserPlus },
   { to: '/health', labelKey: 'apiHealth', icon: HeartPulse },
 ] as const
 
 type AppShellProps = PropsWithChildren<{
   userLabel?: string
+  userRole?: string
   onLogout?: () => void
 }>
 
-export function AppShell({ children, userLabel, onLogout }: AppShellProps) {
+export function AppShell({ children, userLabel, userRole, onLogout }: AppShellProps) {
   const { t } = useLanguage()
+  const isAdmin = userRole === 'Admin'
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
@@ -33,7 +36,7 @@ export function AppShell({ children, userLabel, onLogout }: AppShellProps) {
           <p className="mt-2 text-lg font-semibold text-white">{t('salesConsole')}</p>
         </div>
         <nav className="space-y-1">
-          {navItems.map((item) => {
+          {navItems.filter((item) => !('adminOnly' in item) || !item.adminOnly || isAdmin).map((item) => {
             const Icon = item.icon
 
             return (

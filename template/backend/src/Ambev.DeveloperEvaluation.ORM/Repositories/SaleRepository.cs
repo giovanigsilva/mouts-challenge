@@ -1,5 +1,6 @@
 using Ambev.DeveloperEvaluation.Domain.Entities;
 using Ambev.DeveloperEvaluation.Domain.Repositories;
+using Ambev.DeveloperEvaluation.Domain.Reports;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ambev.DeveloperEvaluation.ORM.Repositories;
@@ -89,5 +90,39 @@ public class SaleRepository : ISaleRepository
     public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Sales.AnyAsync(sale => sale.Id == id, cancellationToken);
+    }
+
+    public async Task<IEnumerable<SalesByUserReport>> GetSalesByUserReportAsync(DateTime? fromDate, DateTime? toDate, CancellationToken cancellationToken = default)
+    {
+        var salesQuery = _context.Sales.AsNoTracking();
+
+        if (fromDate.HasValue)
+            salesQuery = salesQuery.Where(sale => sale.SaleDate >= fromDate.Value);
+
+        if (toDate.HasValue)
+            salesQuery = salesQuery.Where(sale => sale.SaleDate <= toDate.Value);
+
+        return await _context.Users
+            .AsNoTracking()
+            .GroupJoin(
+                salesQuery,
+                user => user.Id,
+                sale => sale.CreatedByUserId,
+                (user, sales) => new SalesByUserReport
+                {
+                    UserId = user.Id,
+                    Username = user.Username,
+                    Email = user.Email,
+                    Role = user.Role,
+                    TotalSales = sales.Count(),
+                    ActiveSales = sales.Count(sale => !sale.IsCancelled),
+                    CancelledSales = sales.Count(sale => sale.IsCancelled),
+                    TotalSoldAmount = sales.Where(sale => !sale.IsCancelled).Sum(sale => sale.TotalAmount),
+                    FirstSaleDate = sales.Min(sale => (DateTime?)sale.SaleDate),
+                    LastSaleDate = sales.Max(sale => (DateTime?)sale.SaleDate)
+                })
+            .OrderByDescending(item => item.TotalSoldAmount)
+            .ThenBy(item => item.Username)
+            .ToListAsync(cancellationToken);
     }
 }

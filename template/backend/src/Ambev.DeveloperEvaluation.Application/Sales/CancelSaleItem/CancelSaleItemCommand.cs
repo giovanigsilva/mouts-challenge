@@ -7,4 +7,5 @@ public class CancelSaleItemCommand : IRequest<SaleResult>
 {
     public Guid SaleId { get; set; }
     public Guid ItemId { get; set; }
+    public Guid UpdatedByUserId { get; set; }
 }

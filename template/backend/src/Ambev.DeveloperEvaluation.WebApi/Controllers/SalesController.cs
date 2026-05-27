@@ -5,6 +5,7 @@ using Ambev.DeveloperEvaluation.Application.Sales.CreateSale;
 using Ambev.DeveloperEvaluation.Application.Sales.DeleteSale;
 using Ambev.DeveloperEvaluation.Application.Sales.GetSale;
 using Ambev.DeveloperEvaluation.Application.Sales.ListSales;
+using Ambev.DeveloperEvaluation.Application.Sales.Reports;
 using Ambev.DeveloperEvaluation.Application.Sales.UpdateSale;
 using Ambev.DeveloperEvaluation.WebApi.Common;
 using Ambev.DeveloperEvaluation.WebApi.Features.Sales.CreateSale;
@@ -55,6 +56,7 @@ public class SalesController : BaseController
             CustomerName = request.CustomerName,
             BranchExternalId = request.BranchExternalId,
             BranchName = request.BranchName,
+            CreatedByUserId = GetCurrentUserGuid(),
             Items = request.Items.Select(item => new SaleItemInput
             {
                 ProductExternalId = item.ProductExternalId,
@@ -93,6 +95,25 @@ public class SalesController : BaseController
             CurrentPage = response.CurrentPage,
             TotalPages = response.TotalPages,
             TotalCount = response.TotalCount
+        });
+    }
+
+    [HttpGet("reports/by-user")]
+    [Authorize(Roles = "Admin")]
+    [SwaggerOperation(OperationId = "Sales_GetSalesByUserReport", Summary = "Relatorio de vendas por usuario.", Description = "Retorna um relatorio administrativo com o total de vendas realizadas por cada usuario, valores vendidos e quantidade de vendas ativas ou canceladas. Disponivel apenas para usuarios Admin.")]
+    [ProducesResponseType(typeof(ApiResponseWithData<IEnumerable<SalesByUserReportResult>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetSalesByUserReport([FromQuery] SalesByUserReportQuery query, CancellationToken cancellationToken)
+    {
+        var response = await _mediator.Send(query, cancellationToken);
+
+        return new OkObjectResult(new ApiResponseWithData<IEnumerable<SalesByUserReportResult>>
+        {
+            Success = true,
+            Message = "Relatorio de vendas por usuario recuperado com sucesso.",
+            Data = response
         });
     }
 
@@ -141,6 +162,7 @@ public class SalesController : BaseController
             CustomerName = request.CustomerName,
             BranchExternalId = request.BranchExternalId,
             BranchName = request.BranchName,
+            UpdatedByUserId = GetCurrentUserGuid(),
             Items = request.Items.Select(item => new SaleItemInput
             {
                 ProductExternalId = item.ProductExternalId,
@@ -190,7 +212,7 @@ public class SalesController : BaseController
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Cancel([FromRoute] Guid id, CancellationToken cancellationToken)
     {
-        var response = await _mediator.Send(new CancelSaleCommand { Id = id }, cancellationToken);
+        var response = await _mediator.Send(new CancelSaleCommand { Id = id, CancelledByUserId = GetCurrentUserGuid() }, cancellationToken);
 
         return new OkObjectResult(new ApiResponseWithData<SaleResult>
         {
@@ -211,7 +233,7 @@ public class SalesController : BaseController
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CancelItem([FromRoute] Guid id, [FromRoute] Guid itemId, CancellationToken cancellationToken)
     {
-        var response = await _mediator.Send(new CancelSaleItemCommand { SaleId = id, ItemId = itemId }, cancellationToken);
+        var response = await _mediator.Send(new CancelSaleItemCommand { SaleId = id, ItemId = itemId, UpdatedByUserId = GetCurrentUserGuid() }, cancellationToken);
 
         return new OkObjectResult(new ApiResponseWithData<SaleResult>
         {

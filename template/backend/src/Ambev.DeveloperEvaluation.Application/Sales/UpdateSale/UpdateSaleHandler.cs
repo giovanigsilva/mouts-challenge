@@ -52,7 +52,7 @@ public class UpdateSaleHandler : IRequestHandler<UpdateSaleCommand, SaleResult>
         }
 
         var items = command.Items.Select(item => new SaleItem(item.ProductExternalId, item.ProductName, item.Quantity, item.UnitPrice));
-        sale.Update(command.SaleNumber, command.SaleDate, command.CustomerExternalId, command.CustomerName, command.BranchExternalId, command.BranchName, items);
+        sale.Update(command.SaleNumber, command.SaleDate, command.CustomerExternalId, command.CustomerName, command.BranchExternalId, command.BranchName, command.UpdatedByUserId, items);
         var updatedSale = await _saleRepository.UpdateAsync(sale, cancellationToken);
         await _salesCacheInvalidator.InvalidateAsync(updatedSale.Id, "UpdateSale", cancellationToken);
         _metrics.SaleModified();

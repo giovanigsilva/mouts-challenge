@@ -53,6 +53,21 @@ public class SaleResult
     public bool IsCancelled { get; set; }
 
     /// <summary>
+    /// Identificador do usuario que criou a venda.
+    /// </summary>
+    public Guid CreatedByUserId { get; set; }
+
+    /// <summary>
+    /// Identificador do usuario que atualizou a venda por ultimo.
+    /// </summary>
+    public Guid? UpdatedByUserId { get; set; }
+
+    /// <summary>
+    /// Identificador do usuario que cancelou a venda.
+    /// </summary>
+    public Guid? CancelledByUserId { get; set; }
+
+    /// <summary>
     /// Data de criacao do registro.
     /// </summary>
     public DateTime CreatedAt { get; set; }
