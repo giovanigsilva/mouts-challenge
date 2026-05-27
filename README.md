@@ -1,6 +1,8 @@
 <img width="1899" height="716" alt="image" src="https://github.com/user-attachments/assets/f1d9aa34-be46-4878-ab3e-29690d826091" />
 <img width="1907" height="670" alt="image" src="https://github.com/user-attachments/assets/85218ae7-83fd-45b1-a189-b598426c6e8e" />
 <img width="1114" height="620" alt="image" src="https://github.com/user-attachments/assets/577bd7a5-f181-4911-bba8-87fe85603fc4" />
+Modelagem de banco de dados
+<img width="588" height="479" alt="image" src="https://github.com/user-attachments/assets/0df2352e-b231-473e-8667-4f086a0fe50e" />
 
 # DeveloperStore Sales API
 
